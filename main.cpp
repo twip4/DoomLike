@@ -1,5 +1,12 @@
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <iostream>
+#include "include/Player.h"
+#include "include/Map.h"
+#include "include/constante.h"
+
+
+void DisplayMap(Map &map,SDL_Renderer* renderer);
+void DisplayPerso(Player &player, SDL_Renderer* renderer);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -10,11 +17,11 @@ int main(int argc, char* args[]) {
 
     // Création de la fenêtre
     SDL_Window* window = SDL_CreateWindow(
-            "SDL2 Test",              // titre
+            "DoomLike",              // titre
             SDL_WINDOWPOS_UNDEFINED,  // position initiale x
             SDL_WINDOWPOS_UNDEFINED,  // position initiale y
-            800,                      // largeur, en pixels
-            600,                      // hauteur, en pixels
+            width,                      // largeur, en pixels
+            height,                      // hauteur, en pixels
             SDL_WINDOW_SHOWN          // flags
     );
 
@@ -33,24 +40,43 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    // Boucle d'événements
-    SDL_Event e;
-    bool quit = false;
-    while (!quit) {
-        // Handle events on queue
-        while (SDL_PollEvent(&e) != 0) {
-            // User requests quit
-            if (e.type == SDL_QUIT) {
-                quit = true;
+    Map map(size_map,size_map);
+    map.init("../assets/map.txt");
+
+    Player player{0,0,&map};
+
+    SDL_Event event;
+    bool running = true;
+    while (running) {
+        while (SDL_PollEvent(&event) != 0) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    running = false;
+                    break;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                        case SDLK_LEFT:
+                            player.SetPosition(-vitesse, 0);
+                            break;
+                        case SDLK_RIGHT:
+                            player.SetPosition(vitesse, 0);
+                            break;
+                        case SDLK_UP:
+                            player.SetPosition(0, -vitesse);
+                            break;
+                        case SDLK_DOWN:
+                            player.SetPosition(0, vitesse);
+                            break;
+                    }
+                    break;
             }
         }
+        DisplayMap(map, renderer);
+        DisplayPerso(player, renderer);
 
-        // Couleur de fond
-        SDL_SetRenderDrawColor(renderer, 0x1E, 0x90, 0xFF, 0xFF); // Bleu dodger
-        SDL_RenderClear(renderer);
 
-        // Mettre à jour l'écran
         SDL_RenderPresent(renderer);
+        SDL_Delay(1000 / 120); // Délai pour ~60 FPS
     }
 
     // Nettoyage
@@ -59,4 +85,34 @@ int main(int argc, char* args[]) {
     SDL_Quit();
 
     return 0;
+}
+
+void DisplayMap(Map &map,SDL_Renderer* renderer){
+    for(int i = 0; i < map.getWidth(); i++){
+        for(int j = 0; j < map.getHeight(); j++){
+            SDL_Rect rect;
+            rect.x = width/size_map*i;
+            rect.y = height/size_map*j;
+            rect.w = width/size_map;
+            rect.h = height/size_map;
+            if(map.getTile(i,j)){
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_RenderFillRect(renderer, &rect);
+            } else{
+                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                SDL_RenderFillRect(renderer, &rect);
+            }
+        }
+    }
+}
+
+void DisplayPerso(Player &player, SDL_Renderer* renderer){
+    SDL_Rect rect;
+    rect.x = player.Posx;
+    rect.y = player.Posy;
+    rect.w = width/size_map/rapportPlayerMaps;
+    rect.h = height/size_map/rapportPlayerMaps;
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &rect);
 }

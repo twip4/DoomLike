@@ -3,10 +3,14 @@ project(DoomLike)
 
 set(CMAKE_CXX_STANDARD 26)
 
-include_directories(/opt/homebrew/include/SDL2)
-
+include_directories(/opt/homebrew/include/)
 
 link_directories(/opt/homebrew/lib)
 link_libraries(SDL2)
 
-add_executable(DoomLike main.cpp)
+add_executable(DoomLike main.cpp
+        src/Player.cpp
+        include/Player.h
+        src/Map.cpp
+        include/Map.h
+        include/constante.h)
