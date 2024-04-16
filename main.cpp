@@ -3,6 +3,9 @@
 #include "include/Player.h"
 #include "include/Map.h"
 #include "include/constante.h"
+#include <cmath>
+
+
 
 
 void DisplayMap(Map &map,SDL_Renderer* renderer);
@@ -56,16 +59,16 @@ int main(int argc, char* args[]) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                         case SDLK_LEFT:
-                            player.SetPosition(-vitesse, 0);
+                            player.angle -= 5;
                             break;
                         case SDLK_RIGHT:
-                            player.SetPosition(vitesse, 0);
+                            player.angle += 5;
                             break;
                         case SDLK_UP:
-                            player.SetPosition(0, -vitesse);
+                            player.SetPosition(vitesse);
                             break;
                         case SDLK_DOWN:
-                            player.SetPosition(0, vitesse);
+                            player.SetPosition(-vitesse);
                             break;
                     }
                     break;
@@ -73,7 +76,7 @@ int main(int argc, char* args[]) {
         }
         DisplayMap(map, renderer);
         DisplayPerso(player, renderer);
-
+        player.TraceRayon(renderer);
 
         SDL_RenderPresent(renderer);
         SDL_Delay(1000 / 120); // Délai pour ~60 FPS
@@ -108,11 +111,13 @@ void DisplayMap(Map &map,SDL_Renderer* renderer){
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_Rect rect;
-    rect.x = player.Posx;
-    rect.y = player.Posy;
+    rect.x = player.posX;
+    rect.y = player.posY;
     rect.w = width/size_map/rapportPlayerMaps;
     rect.h = height/size_map/rapportPlayerMaps;
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRect(renderer, &rect);
 }
+
+

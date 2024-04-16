@@ -4,20 +4,35 @@
 
 #ifndef DOOMLIKE_PLAYER_H
 #define DOOMLIKE_PLAYER_H
+#include <SDL2/SDL.h>
 #include "Map.h"
 #include "cmath"
+#include <algorithm>
 #include "constante.h"
+
+enum CollisionResult {
+    COLLISION_TOP,
+    COLLISION_BOTTOM,
+    COLLISION_RIGHT,
+    COLLISION_LEFT,
+    COLLISION_OK,
+    COLLISION_OUTER,
+    COLLISION_ERROR
+};
+
 class Player {
 private:
-    bool Collision(int x, int y) const;
+    CollisionResult Collision(int x, int y) const;
 public:
-    int Posx;
-    int Posy;
+    int posX;
+    int posY;
     int rayon = 1;
     Map* map;
     float angle = 90;
     Player(int x, int y, Map* map);
-    void SetPosition(int x, int y);
+    void TraceRayon(SDL_Renderer* renderer);
+    void SetPosition(int v);
+    void calculateDescentRatio();
 };
 
 #endif //DOOMLIKE_PLAYER_H
