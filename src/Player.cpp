@@ -114,34 +114,37 @@ void Player::calculateDescentRatio() {
 
 void Player::TraceRayon(SDL_Renderer* renderer){
     // Conversion de l'angle de degrés en radians pour les fonctions trigonométriques
-    float angleRadians = angle * PI / 180.0;
 
-    double m = tan(angleRadians);
+    for (int i = (angle - fov/2); i <= (angle + fov/2); i++) {
+        float angleRadians = i * PI / 180.0;
 
-    int tempX = posX;
-    int tempY = posY;
+        double m = tan(angleRadians);
 
-    while (true) {
-        if (std::abs(cos(angleRadians)) > std::abs(sin(angleRadians))) {
-            tempX = roundToGridSize(tempX + (cos(angleRadians) > 0 ? 1 : -1), cos(angleRadians) > 0);
-            tempY = posY + m * (tempX - posX);
-        } else {
-            tempY = roundToGridSize(tempY + (sin(angleRadians) > 0 ? 1 : -1), sin(angleRadians) > 0);
-            tempX = posX + (tempY - posY) / m;
+        int tempX = posX;
+        int tempY = posY;
+
+        while (true) {
+            if (abs(cos(angleRadians)) > abs(sin(angleRadians))) {
+                tempX = roundToGridSize(tempX + (cos(angleRadians) > 0 ? 1 : -1), cos(angleRadians) > 0);
+                tempY = posY + m * (tempX - posX);
+            } else {
+                tempY = roundToGridSize(tempY + (sin(angleRadians) > 0 ? 1 : -1), sin(angleRadians) > 0);
+                tempX = posX + (tempY - posY) / m;
+            }
+
+            if (Collision(tempX, tempY) != COLLISION_OK) {
+                break;
+            }
         }
 
-        if (Collision(tempX, tempY) != COLLISION_OK) {
-            break;
-        }
+        // Calcul des coordonnées finales en utilisant la longueur du rayon
+        int endX = tempX;
+        int endY = tempY;
+
+        // Définir la couleur de dessin pour le rayon
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour le rayon
+
+        // Tracer la ligne du centre du joueur vers le point calculé
+        SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, endX, endY);
     }
-
-    // Calcul des coordonnées finales en utilisant la longueur du rayon
-    int endX = tempX;
-    int endY = tempY;
-
-    // Définir la couleur de dessin pour le rayon
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour le rayon
-
-    // Tracer la ligne du centre du joueur vers le point calculé
-    SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, endX, endY);
 }
