@@ -10,6 +10,7 @@ const int height = 1000;
 const int size_map = 20;
 const int rapportPlayerMaps = 8;
 const int GRID_SIZE = width/size_map;
+const int MiniMap = 5;
 
 const int nb_case_w = 20;
 const int nb_case_h = 20;

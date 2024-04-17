@@ -10,6 +10,7 @@
 
 void DisplayMap(Map &map,SDL_Renderer* renderer);
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
+void DisplayBackground(SDL_Renderer* renderer);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -76,26 +77,11 @@ int main(int argc, char* args[]) {
                     break;
             }
         }
-        //DisplayMap(map, renderer);
-        //DisplayPerso(player, renderer);
-        SDL_Rect rect;
-        rect.x = 0;
-        rect.y = 0;
-        rect.w = 1000;
-        rect.h = 500;
 
-        SDL_SetRenderDrawColor(renderer, 91, 228, 255, 255);
-        SDL_RenderFillRect(renderer, &rect);
-
-        rect.x = 0;
-        rect.y = 500;
-        rect.w = 1000;
-        rect.h = 500;
-
-        SDL_SetRenderDrawColor(renderer, 105, 55, 6, 255);
-        SDL_RenderFillRect(renderer, &rect);
-
+        DisplayBackground(renderer);
         player.TraceRayon(renderer);
+        DisplayMap(map, renderer);
+        DisplayPerso(player, renderer);
 
         SDL_RenderPresent(renderer);
         SDL_Delay(1000 / 120); // Délai pour ~60 FPS
@@ -113,10 +99,10 @@ void DisplayMap(Map &map,SDL_Renderer* renderer){
     for(int i = 0; i < map.getWidth(); i++){
         for(int j = 0; j < map.getHeight(); j++){
             SDL_Rect rect;
-            rect.x = width/size_map*i;
-            rect.y = height/size_map*j;
-            rect.w = width/size_map;
-            rect.h = height/size_map;
+            rect.x = width/size_map/MiniMap*i;
+            rect.y = height/size_map/MiniMap*j;
+            rect.w = width/size_map/MiniMap;
+            rect.h = height/size_map/MiniMap;
             if(map.getTile(i,j)){
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                 SDL_RenderFillRect(renderer, &rect);
@@ -124,20 +110,37 @@ void DisplayMap(Map &map,SDL_Renderer* renderer){
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
                 SDL_RenderFillRect(renderer, &rect);
             }
-            SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-            SDL_RenderDrawRect(renderer, &rect);
         }
     }
 }
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_Rect rect;
-    rect.x = player.posX;
-    rect.y = player.posY;
-    rect.w = width/size_map/rapportPlayerMaps;
-    rect.h = height/size_map/rapportPlayerMaps;
+    rect.x = player.posX/MiniMap;
+    rect.y = player.posY/MiniMap;
+    rect.w = width/size_map/rapportPlayerMaps/MiniMap;
+    rect.h = height/size_map/rapportPlayerMaps/MiniMap;
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+void DisplayBackground(SDL_Renderer* renderer){
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = 1000;
+    rect.h = 500;
+
+    SDL_SetRenderDrawColor(renderer, 91, 228, 255, 255);
+    SDL_RenderFillRect(renderer, &rect);
+
+    rect.x = 0;
+    rect.y = 500;
+    rect.w = 1000;
+    rect.h = 500;
+
+    SDL_SetRenderDrawColor(renderer, 105, 55, 6, 255);
     SDL_RenderFillRect(renderer, &rect);
 }
 
