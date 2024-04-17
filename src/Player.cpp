@@ -195,17 +195,10 @@ void Player::TraceRayon(SDL_Renderer* renderer) {
             }
             step ++;
         }
-
-        float distance = sqrt(pow(cible.x - posX + playerWidth / 2,2)+pow(cible.y - posY + playerHeight / 2,2));
-        float rectHeight = 50000/(cos((fov / 2 - i/precision_angle)*PI/180)*distance);
         int wide = (int) width / (fov*precision_angle);
-        float rectWidth = wide;
-
-        SDL_Rect rect;
-        rect.x = stepVue*wide;
-        rect.y = (height -rectHeight )/2;
-        rect.w = rectWidth;
-        rect.h = rectHeight;
+        double distance = sqrt(pow(cible.x - (posX + playerWidth / 2), 2) + pow(cible.y - (posY + playerHeight / 2), 2));
+        double rectHeight = 50000 / (cos((fov / 2 - (i - angle)) * M_PI / 180) * distance);
+        SDL_Rect rect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, (int)rectHeight};
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillRect(renderer, &rect);
