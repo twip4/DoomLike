@@ -28,7 +28,8 @@ void Map::setTile(int x, int y, int value) {
 
 int Map::getTile(int x, int y) const {
     if (x < 0 || x >= width || y < 0 || y >= height) {
-        throw std::out_of_range("Map::getTile: Index out of range");
+        return 1;
+        // throw std::out_of_range("Map::getTile: Index out of range");
     }
     return tiles[y][x]; // Correct index usage: y for row, x for column
 }

@@ -148,33 +148,38 @@ bool Player::CollisionRayon(int startX, int startY, int x, int y) {
 }
 
 void Player::TraceRayon(SDL_Renderer* renderer) {
-    double tempX = posX + playerWidth / 2.0;
-    double tempY = posY + playerHeight / 2.0;
+    for (int i = angle - fov/2; i < angle + fov/2; i++){
+        double tempX = posX + playerWidth / 2.0;
+        double tempY = posY + playerHeight / 2.0;
 
-    bool running = true;
-    Point cible;
+        bool running = true;
+        Point cible;
 
-    int step = 0;
+        int step = 0;
 
-    while (running) {
-        cout << tempX << ":" << tempY << endl;
-        cible = next_grid_intersection(tempX, tempY, angle);
-        if (CollisionRayon(tempX, tempY, cible.x, cible.y)) {
-            running = false;
-        } else {
-            if (tempX < cible.x) {
-                tempX = cible.x+1;
-            } else{
-                tempX = cible.x-1;
+        while (running) {
+            cible = next_grid_intersection(tempX, tempY, i);
+            if (CollisionRayon(tempX, tempY, cible.x, cible.y)) {
+                running = false;
+            } else {
+                if (tempX < cible.x) {
+                    tempX = cible.x+1;
+                } else{
+                    tempX = cible.x-1;
+                }
+                if (tempY < cible.y) {
+                    tempY = cible.y+1;
+                } else{
+                    tempY = cible.y-1;
+                }
             }
-            if (tempY < cible.y) {
-                tempY = cible.y+1;
-            } else{
-                tempY = cible.y-1;
+            if (step >= size_map){
+                running = false;
             }
+            step ++;
         }
-    }
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
-    SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, cible.x, cible.y);
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
+        SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, cible.x, cible.y);
+    }
 }
