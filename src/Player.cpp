@@ -132,13 +132,29 @@ bool Player::CollisionRayon(int startX, int startY, int x, int y) {
     int tileX = x / (width / nb_case_w);
     int tileY = y / (height / nb_case_h);
 
+    if (x % GRID_SIZE == 0 && y % GRID_SIZE == 0){
+        if (startY < y) {
+            if (startX < x) {
+                return map->getTile(tileX + 1, tileY + 1) == 1;
+            } else {
+                return map->getTile(tileX - 1, tileY + 1) == 1;
+            }
+        } else {
+            if (startX < x) {
+                return map->getTile(tileX + 1, tileY - 1) == 1;
+            } else {
+                return map->getTile(tileX - 1, tileY- 1) == 1;
+            }
+        }
+    }
     if (x % GRID_SIZE == 0) {
         if (startX < x) {
             return map->getTile(tileX, tileY) == 1;
         } else {
             return map->getTile(tileX - 1, tileY) == 1;
         }
-    } else {
+    }
+    if (y % GRID_SIZE == 0) {
         if (startY < y) {
             return map->getTile(tileX, tileY) == 1;
         } else {
