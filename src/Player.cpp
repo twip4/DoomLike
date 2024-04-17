@@ -6,6 +6,11 @@
 
 int roundToGridSize(int value, bool up);
 
+struct Point {
+    double x;
+    double y;
+};
+
 Player::Player(int x, int y, Map* map) : posX(x), posY(y), map(map){}
 
 void Player::SetPosition(int v) {
@@ -76,75 +81,75 @@ CollisionResult Player::Collision(int x, int y) const {
 
 int roundToGridSize(int value, bool up) {
     int gridSize = height / size_map;
-    if (up) {
-        return ((value + gridSize - 1) / gridSize) * gridSize; // Arrondi supérieur
+    return up ? ((value + gridSize - 1) / gridSize) * gridSize : (value / gridSize) * gridSize;
+}
+
+
+Point findNextIntersection(int posX, int posY, double angle) {
+    double angleRadians = angle * PI / 180.0;
+    double tanTheta = tan(angleRadians);
+    double cosTheta = cos(angleRadians);
+    double sinTheta = sin(angleRadians);
+
+    // Determine the direction of the ray
+    int stepX = cosTheta >= 0 ? 1 : -1;
+    int stepY = sinTheta >= 0 ? 1 : -1;
+
+    // Adjust the next grid line calculation
+    int nextXGrid = ((posX / GRID_SIZE) + (stepX > 0 ? 1 : (posX % GRID_SIZE == 0 ? 0 : -1))) * GRID_SIZE;
+    int nextYGrid = ((posY / GRID_SIZE) + (stepY > 0 ? 1 : (posY % GRID_SIZE == 0 ? 0 : -1))) * GRID_SIZE;
+
+    // Calculate the intersection points
+    double intersectionX = nextXGrid;
+    double intersectionY = posY + (cosTheta != 0 ? (tanTheta * (intersectionX - posX)) : 0);
+
+    double intersectionYGrid = nextYGrid;
+    double intersectionXGrid = posX + (sinTheta != 0 ? ((intersectionYGrid - posY) / tanTheta) : 0);
+
+    // Determine which intersection happens first
+    double distX = (cosTheta != 0 ? (intersectionX - posX) / cosTheta : DBL_MAX);
+    double distY = (sinTheta != 0 ? (intersectionYGrid - posY) / sinTheta : DBL_MAX);
+
+    Point result;
+    if (fabs(distX) < fabs(distY)) {
+        result.x = intersectionX;
+        result.y = intersectionY;
     } else {
-        return (value / gridSize) * gridSize; // Arrondi inférieur
+        result.x = intersectionXGrid;
+        result.y = intersectionYGrid;
+    }
+
+    return result;
+}
+
+bool Player::CollisionRayon(int x, int y){
+    if(map->getTile(x / (width / nb_case_w),y / (height / nb_case_h)) == 1){
+        // cout << x / (width / nb_case_w) << ":" << y / (height / nb_case_h) << endl;
+        return true;
+    } else{
+        return false;
     }
 }
 
-void Player::calculateDescentRatio() {
-    float angleRadians = angle * PI / 180.0;
-    double m = tan(angleRadians);
-    int lastValidX = posX;
-    int lastValidY = posY;
+void Player::TraceRayon(SDL_Renderer* renderer) {
+    double tempX = posX + playerWidth / 2.0;
+    double tempY = posY + playerHeight / 2.0;
 
-    int tempX = posX;
-    int tempY = posY;
+    bool running = true;
+    Point cible = {tempX, tempY};
 
-    while (true) {
-        if (std::abs(cos(angleRadians)) > std::abs(sin(angleRadians))) {
-            tempX = roundToGridSize(tempX + (cos(angleRadians) > 0 ? 1 : -1), cos(angleRadians) > 0);
-            tempY = posY + m * (tempX - posX);
+    while (running) {
+        cible = findNextIntersection(tempX, tempY, angle);
+        cout << cible.x << endl;
+        if (CollisionRayon(cible.x, cible.y)) {
+            running = false;
         } else {
-            tempY = roundToGridSize(tempY + (sin(angleRadians) > 0 ? 1 : -1), sin(angleRadians) > 0);
-            tempX = posX + (tempY - posY) / m;
+            // Check additional grid intersection collision points
+            tempX = cible.x;
+            tempY = cible.y;
         }
-
-        if (Collision(tempX, tempY) != COLLISION_OK) {
-            break;
-        }
-
-        lastValidX = tempX;  // Mise à jour de la dernière position valide
-        lastValidY = tempY;
     }
 
-    std::cout << "Last valid position was X: " << lastValidX << " Y: " << lastValidY << std::endl;
-}
-
-void Player::TraceRayon(SDL_Renderer* renderer){
-    // Conversion de l'angle de degrés en radians pour les fonctions trigonométriques
-
-    for (int i = (angle - fov/2); i <= (angle + fov/2); i++) {
-        float angleRadians = i * PI / 180.0;
-
-        double m = tan(angleRadians);
-
-        int tempX = posX;
-        int tempY = posY;
-
-        while (true) {
-            if (abs(cos(angleRadians)) > abs(sin(angleRadians))) {
-                tempX = roundToGridSize(tempX + (cos(angleRadians) > 0 ? 1 : -1), cos(angleRadians) > 0);
-                tempY = posY + m * (tempX - posX);
-            } else {
-                tempY = roundToGridSize(tempY + (sin(angleRadians) > 0 ? 1 : -1), sin(angleRadians) > 0);
-                tempX = posX + (tempY - posY) / m;
-            }
-
-            if (Collision(tempX, tempY) != COLLISION_OK) {
-                break;
-            }
-        }
-
-        // Calcul des coordonnées finales en utilisant la longueur du rayon
-        int endX = tempX;
-        int endY = tempY;
-
-        // Définir la couleur de dessin pour le rayon
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour le rayon
-
-        // Tracer la ligne du centre du joueur vers le point calculé
-        SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, endX, endY);
-    }
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color red for the ray
+    SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, cible.x, cible.y);
 }

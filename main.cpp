@@ -46,7 +46,7 @@ int main(int argc, char* args[]) {
     Map map(size_map,size_map);
     map.init("../assets/map.txt");
 
-    Player player{0,0,&map};
+    Player player{150,150,&map};
 
     SDL_Event event;
     bool running = true;
@@ -60,9 +60,11 @@ int main(int argc, char* args[]) {
                     switch (event.key.keysym.sym) {
                         case SDLK_LEFT:
                             player.angle -= 5;
+                            if (player.angle < 0) player.angle += 360; // If angle goes negative, wrap it around
                             break;
                         case SDLK_RIGHT:
                             player.angle += 5;
+                            player.angle %= 360; // Wrap around if the angle exceeds 359
                             break;
                         case SDLK_UP:
                             player.SetPosition(vitesse);
@@ -105,6 +107,8 @@ void DisplayMap(Map &map,SDL_Renderer* renderer){
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
                 SDL_RenderFillRect(renderer, &rect);
             }
+            SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+            SDL_RenderDrawRect(renderer, &rect);
         }
     }
 }
