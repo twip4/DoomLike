@@ -82,9 +82,17 @@ int main(int argc, char* args[]) {
         rect.x = 0;
         rect.y = 0;
         rect.w = 1000;
-        rect.h = 1000;
+        rect.h = 500;
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_SetRenderDrawColor(renderer, 91, 228, 255, 255);
+        SDL_RenderFillRect(renderer, &rect);
+
+        rect.x = 0;
+        rect.y = 500;
+        rect.w = 1000;
+        rect.h = 500;
+
+        SDL_SetRenderDrawColor(renderer, 105, 55, 6, 255);
         SDL_RenderFillRect(renderer, &rect);
 
         player.TraceRayon(renderer);

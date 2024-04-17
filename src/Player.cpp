@@ -165,7 +165,7 @@ bool Player::CollisionRayon(int startX, int startY, int x, int y) {
 
 void Player::TraceRayon(SDL_Renderer* renderer) {
     int stepVue = 1;
-    for (int i = angle - fov/2; i < angle + fov/2; i += precision_angle){
+    for (float i = angle - fov/2; i < angle + fov/2; i += precision_angle){
         double tempX = posX + playerWidth / 2.0;
         double tempY = posY + playerHeight / 2.0;
 
