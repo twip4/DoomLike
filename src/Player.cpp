@@ -163,7 +163,7 @@ bool Player::CollisionRayon(int startX, int startY, int x, int y) {
     }
 }
 
-void Player::TraceRayon(SDL_Renderer* renderer) {
+void Player::TraceRayon(SDL_Renderer* renderer, bool mode) {
     int stepVue = 1;
     for (float i = angle - fov/2; i < angle + fov/2; i += precision_angle){
         double tempX = posX + playerWidth / 2.0;
@@ -200,12 +200,15 @@ void Player::TraceRayon(SDL_Renderer* renderer) {
         double rectHeight = 50000 / (cos((fov / 2 - (i - angle)) * M_PI / 180) * distance);
         SDL_Rect rect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, (int)rectHeight};
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderFillRect(renderer, &rect);
+        if (mode){
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_RenderFillRect(renderer, &rect);
+        }
+        else{
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
+            SDL_RenderDrawLine(renderer, posX / MiniMap + playerWidth / 2 , posY /MiniMap  + playerHeight / 2 , cible.x / MiniMap, cible.y / MiniMap);
+        }
 
         stepVue ++;
-
-        //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
-        //SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, cible.x, cible.y);
     }
 }

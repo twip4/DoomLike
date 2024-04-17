@@ -79,8 +79,9 @@ int main(int argc, char* args[]) {
         }
 
         DisplayBackground(renderer);
-        player.TraceRayon(renderer);
+        player.TraceRayon(renderer,true);
         DisplayMap(map, renderer);
+        player.TraceRayon(renderer,false);
         DisplayPerso(player, renderer);
 
         SDL_RenderPresent(renderer);
@@ -118,8 +119,8 @@ void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_Rect rect;
     rect.x = player.posX/MiniMap;
     rect.y = player.posY/MiniMap;
-    rect.w = width/size_map/rapportPlayerMaps/MiniMap;
-    rect.h = height/size_map/rapportPlayerMaps/MiniMap;
+    rect.w = width/size_map/rapportPlayerMaps;
+    rect.h = height/size_map/rapportPlayerMaps;
 
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     SDL_RenderFillRect(renderer, &rect);

@@ -30,7 +30,7 @@ public:
     Map* map;
     int angle = 95;
     Player(int x, int y, Map* map);
-    void TraceRayon(SDL_Renderer* renderer);
+    void TraceRayon(SDL_Renderer* renderer,bool mode);
     void SetPosition(int v);
     bool CollisionRayon(int startX, int startY, int x, int y);
 };
