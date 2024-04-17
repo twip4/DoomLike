@@ -28,11 +28,11 @@ public:
     int posY;
     int rayon = 1;
     Map* map;
-    int angle = 90;
+    int angle = 95;
     Player(int x, int y, Map* map);
     void TraceRayon(SDL_Renderer* renderer);
     void SetPosition(int v);
-    bool CollisionRayon(int x, int y);
+    bool CollisionRayon(int startX, int startY, int x, int y);
 };
 
 #endif //DOOMLIKE_PLAYER_H

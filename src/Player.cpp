@@ -4,14 +4,19 @@
 
 #include "../include/Player.h"
 
-int roundToGridSize(int value, bool up);
-
 struct Point {
-    double x;
-    double y;
+    int x;
+    int y;
 };
 
 Player::Player(int x, int y, Map* map) : posX(x), posY(y), map(map){}
+
+
+int roundToGridSize(int value, bool up) {
+    int gridSize = height / size_map;
+    return up ? ((value + gridSize - 1) / gridSize) * gridSize : (value / gridSize) * gridSize;
+}
+
 
 void Player::SetPosition(int v) {
     float angleRadians = angle * PI / 180.0;
@@ -21,15 +26,19 @@ void Player::SetPosition(int v) {
     switch (Collision(proposedX, proposedY)) {
         case COLLISION_TOP:
             posY = roundToGridSize(proposedY, true);
+            posX = proposedX;
             break;
         case COLLISION_BOTTOM:
             posY =  roundToGridSize(proposedY + (height / size_map), false)- playerHeight;
+            posX = proposedX;
             break;
         case COLLISION_RIGHT:
             posX = roundToGridSize(proposedX + (width / size_map), true) - playerWidth - (width / size_map);
+            posY = proposedY;
             break;
         case COLLISION_LEFT:
             posX = roundToGridSize(proposedX, true);
+            posY = proposedY;
             break;
         case COLLISION_OK:
             posX = proposedX;
@@ -79,55 +88,62 @@ CollisionResult Player::Collision(int x, int y) const {
     return COLLISION_OK;
 }
 
-int roundToGridSize(int value, bool up) {
-    int gridSize = height / size_map;
-    return up ? ((value + gridSize - 1) / gridSize) * gridSize : (value / gridSize) * gridSize;
-}
+Point next_grid_intersection(double x, double y, double theta) {
+    // Convertir l'angle en radians
+    double theta_radians = theta * M_PI / 180.0;
 
+    // Calculer les composantes du vecteur direction
+    double dx = std::cos(theta_radians);
+    double dy = std::sin(theta_radians);
 
-Point findNextIntersection(int posX, int posY, double angle) {
-    double angleRadians = angle * PI / 180.0;
-    double tanTheta = tan(angleRadians);
-    double cosTheta = cos(angleRadians);
-    double sinTheta = sin(angleRadians);
-
-    // Determine the direction of the ray
-    int stepX = cosTheta >= 0 ? 1 : -1;
-    int stepY = sinTheta >= 0 ? 1 : -1;
-
-    // Adjust the next grid line calculation
-    int nextXGrid = ((posX / GRID_SIZE) + (stepX > 0 ? 1 : (posX % GRID_SIZE == 0 ? 0 : -1))) * GRID_SIZE;
-    int nextYGrid = ((posY / GRID_SIZE) + (stepY > 0 ? 1 : (posY % GRID_SIZE == 0 ? 0 : -1))) * GRID_SIZE;
-
-    // Calculate the intersection points
-    double intersectionX = nextXGrid;
-    double intersectionY = posY + (cosTheta != 0 ? (tanTheta * (intersectionX - posX)) : 0);
-
-    double intersectionYGrid = nextYGrid;
-    double intersectionXGrid = posX + (sinTheta != 0 ? ((intersectionYGrid - posY) / tanTheta) : 0);
-
-    // Determine which intersection happens first
-    double distX = (cosTheta != 0 ? (intersectionX - posX) / cosTheta : DBL_MAX);
-    double distY = (sinTheta != 0 ? (intersectionYGrid - posY) / sinTheta : DBL_MAX);
-
-    Point result;
-    if (fabs(distX) < fabs(distY)) {
-        result.x = intersectionX;
-        result.y = intersectionY;
+    // Trouver le prochain multiple de SIZE_GRID pour x et y
+    double next_x, next_y;
+    if (dx > 0) {
+        next_x = std::ceil(x / GRID_SIZE) * GRID_SIZE;
+    } else if (dx < 0) {
+        next_x = std::floor(x / GRID_SIZE) * GRID_SIZE;
     } else {
-        result.x = intersectionXGrid;
-        result.y = intersectionYGrid;
+        next_x = x;
     }
 
-    return result;
+    if (dy > 0) {
+        next_y = std::ceil(y / GRID_SIZE) * GRID_SIZE;
+    } else if (dy < 0) {
+        next_y = std::floor(y / GRID_SIZE) * GRID_SIZE;
+    } else {
+        next_y = y;
+    }
+
+    // Calculer la distance jusqu'aux prochaines intersections
+    double dist_x = dx != 0 ? (next_x - x) / dx : std::numeric_limits<double>::infinity();
+    double dist_y = dy != 0 ? (next_y - y) / dy : std::numeric_limits<double>::infinity();
+
+    Point cible{};
+    // Comparer les distances et choisir la plus courte
+    if (std::abs(dist_x) < std::abs(dist_y)) {
+        return cible = {static_cast<int>(next_x), static_cast<int>(y + dy * dist_x)};
+    } else {
+        return cible = {static_cast<int>(x + dx * dist_y), static_cast<int>(next_y)};
+    }
 }
 
-bool Player::CollisionRayon(int x, int y){
-    if(map->getTile(x / (width / nb_case_w),y / (height / nb_case_h)) == 1){
-        // cout << x / (width / nb_case_w) << ":" << y / (height / nb_case_h) << endl;
-        return true;
-    } else{
-        return false;
+
+bool Player::CollisionRayon(int startX, int startY, int x, int y) {
+    int tileX = x / (width / nb_case_w);
+    int tileY = y / (height / nb_case_h);
+
+    if (x % GRID_SIZE == 0) {
+        if (startX < x) {
+            return map->getTile(tileX, tileY) == 1;
+        } else {
+            return map->getTile(tileX - 1, tileY) == 1;
+        }
+    } else {
+        if (startY < y) {
+            return map->getTile(tileX, tileY) == 1;
+        } else {
+            return map->getTile(tileX, tileY - 1) == 1;
+        }
     }
 }
 
@@ -136,20 +152,29 @@ void Player::TraceRayon(SDL_Renderer* renderer) {
     double tempY = posY + playerHeight / 2.0;
 
     bool running = true;
-    Point cible = {tempX, tempY};
+    Point cible;
+
+    int step = 0;
 
     while (running) {
-        cible = findNextIntersection(tempX, tempY, angle);
-        cout << cible.x << endl;
-        if (CollisionRayon(cible.x, cible.y)) {
+        cout << tempX << ":" << tempY << endl;
+        cible = next_grid_intersection(tempX, tempY, angle);
+        if (CollisionRayon(tempX, tempY, cible.x, cible.y)) {
             running = false;
         } else {
-            // Check additional grid intersection collision points
-            tempX = cible.x;
-            tempY = cible.y;
+            if (tempX < cible.x) {
+                tempX = cible.x+1;
+            } else{
+                tempX = cible.x-1;
+            }
+            if (tempY < cible.y) {
+                tempY = cible.y+1;
+            } else{
+                tempY = cible.y-1;
+            }
         }
     }
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color red for the ray
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
     SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, cible.x, cible.y);
 }
