@@ -164,7 +164,7 @@ bool Player::CollisionRayon(int startX, int startY, int x, int y) {
 }
 
 void Player::TraceRayon(SDL_Renderer* renderer) {
-    for (int i = angle - fov/2; i < angle + fov/2; i++){
+    for (int i = 0; i < fov; i += precision_angle){
         double tempX = posX + playerWidth / 2.0;
         double tempY = posY + playerHeight / 2.0;
 
@@ -174,7 +174,7 @@ void Player::TraceRayon(SDL_Renderer* renderer) {
         int step = 0;
 
         while (running) {
-            cible = next_grid_intersection(tempX, tempY, i);
+            cible = next_grid_intersection(tempX, tempY, angle+i);
             if (CollisionRayon(tempX, tempY, cible.x, cible.y)) {
                 running = false;
             } else {
@@ -195,7 +195,21 @@ void Player::TraceRayon(SDL_Renderer* renderer) {
             step ++;
         }
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
-        SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, cible.x, cible.y);
+        float distance = sqrt(pow(cible.x - posX + playerWidth / 2,2)+pow(cible.y - posY + playerHeight / 2,2));
+        float rectHeight = 50000/(cos((fov / 2 - i/precision_angle)*PI/180)*distance);
+        float wide = (float) width / (fov*precision_angle);
+        float rectWidth = wide;
+
+        SDL_Rect rect;
+        rect.x = i*wide;
+        rect.y = (height -rectHeight )/2;
+        rect.w = rectWidth;
+        rect.h = rectHeight;
+
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_RenderFillRect(renderer, &rect);
+
+        //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
+        //SDL_RenderDrawLine(renderer, posX + playerWidth / 2, posY + playerHeight / 2, cible.x, cible.y);
     }
 }

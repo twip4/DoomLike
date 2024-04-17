@@ -76,8 +76,17 @@ int main(int argc, char* args[]) {
                     break;
             }
         }
-        DisplayMap(map, renderer);
-        DisplayPerso(player, renderer);
+        //DisplayMap(map, renderer);
+        //DisplayPerso(player, renderer);
+        SDL_Rect rect;
+        rect.x = 0;
+        rect.y = 0;
+        rect.w = 1000;
+        rect.h = 1000;
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderFillRect(renderer, &rect);
+
         player.TraceRayon(renderer);
 
         SDL_RenderPresent(renderer);
