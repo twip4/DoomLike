@@ -5,9 +5,6 @@
 #include "include/constante.h"
 #include <cmath>
 
-
-
-
 void DisplayMap(Map &map,SDL_Renderer* renderer);
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
 void DisplayBackground(SDL_Renderer* renderer);
@@ -47,7 +44,7 @@ int main(int argc, char* args[]) {
     Map map(size_map,size_map);
     map.init("../assets/map.txt");
 
-    Player player{150,150,&map};
+    Player player{70,70,&map};
 
     SDL_Event event;
     bool running = true;
@@ -65,7 +62,7 @@ int main(int argc, char* args[]) {
                             break;
                         case SDLK_RIGHT:
                             player.angle += 5;
-                            player.angle %= 360; // Wrap around if the angle exceeds 359
+                            player.angle = fmod(player.angle, 360.0);  // Wrap around if the angle exceeds 359
                             break;
                         case SDLK_UP:
                             player.SetPosition(vitesse);
@@ -85,7 +82,7 @@ int main(int argc, char* args[]) {
         DisplayPerso(player, renderer);
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(1000 / 120); // Délai pour ~60 FPS
+        SDL_Delay(1000 / fps);
     }
 
     // Nettoyage

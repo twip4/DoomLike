@@ -28,7 +28,7 @@ public:
     int posY;
     int rayon = 1;
     Map* map;
-    int angle = 95;
+    float angle = 90;
     Player(int x, int y, Map* map);
     void TraceRayon(SDL_Renderer* renderer,bool mode);
     void SetPosition(int v);

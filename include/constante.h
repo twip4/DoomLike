@@ -20,11 +20,9 @@ const int playerHeight = (height / nb_case_h) / rapportPlayerMaps;
 
 const int vitesse = width/size_map/rapportPlayerMaps;
 const int v_angle = 10;
-const int fov = 60;
-const int precision_angle = 1;
+const int fov = 80;
+const float precision_angle = 0.08;
 
-const int fps = 30;
-const int rayon = 1;
-const int dist_tol = 200;
+const int fps = 80;
 
 #endif //DOOMLIKE_CONSTANTE_H
