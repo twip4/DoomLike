@@ -9,6 +9,7 @@ void DisplayMap(SDL_Renderer* renderer);
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
 void DisplayBackground(SDL_Renderer* renderer);
 bool isCollision(int x, int y);
+void cursor(SDL_Renderer* renderer);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -55,10 +56,10 @@ int main(int argc, char* args[]) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                         case SDLK_LEFT:
-                            player.angle+= v_angle;
+                            player.angle-= v_angle;
                             break;
                         case SDLK_RIGHT:
-                            player.angle-= v_angle;
+                            player.angle+= v_angle;
                             break;
                         case SDLK_UP:
                             if(!isCollision(player.posX+cos(player.angle*PI/180)*vitesse, player.posY-sin(player.angle*PI/180)*vitesse)){
@@ -78,13 +79,10 @@ int main(int argc, char* args[]) {
         }
 
         DisplayBackground(renderer);
-        DisplayMap(renderer);
         DisplayPerso(player, renderer);
-        for (float i = player.angle - fov/2; i < player.angle + fov/2; i += precision_angle){
-            player.line_view(renderer,i);
-        }
-        player.lineCenter(renderer);
-
+        player.line_view(renderer);
+        DisplayMap(renderer);
+        cursor(renderer);
 
         SDL_RenderPresent(renderer);
         SDL_Delay(1000 / fps);
@@ -158,4 +156,10 @@ bool isCollision(int x, int y) {
         return true;
     }
     return false;
+}
+
+void cursor(SDL_Renderer* renderer){
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderDrawLine(renderer, width/2-sizeCursoe, width/2, width/2+sizeCursoe, width/2);
+    SDL_RenderDrawLine(renderer, width/2, width/2-sizeCursoe, width/2, width/2+sizeCursoe);
 }

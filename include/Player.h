@@ -19,9 +19,9 @@ class Player {
 public:
     int posX;
     int posY;
-    int angle = 90;
+    int angle = 0;
     Player(int x, int y);
-    void line_view(SDL_Renderer* renderer, float nb_dec) const;
+    void line_view(SDL_Renderer* renderer) const;
     void lineCenter(SDL_Renderer* renderer);
 };
 
