@@ -20,6 +20,7 @@ public:
     int posX;
     int posY;
     int angle = 0;
+    SDL_Texture* myTexture;
     Player(int x, int y);
     void line_view(SDL_Renderer* renderer) const;
     void lineCenter(SDL_Renderer* renderer);

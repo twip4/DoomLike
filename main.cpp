@@ -5,11 +5,13 @@
 #include "include/constante.h"
 #include <cmath>
 
+
 void DisplayMap(SDL_Renderer* renderer);
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
 void DisplayBackground(SDL_Renderer* renderer);
 bool isCollision(int x, int y);
 void cursor(SDL_Renderer* renderer);
+SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -18,6 +20,7 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
+
     // Création de la fenêtre
     SDL_Window* window = SDL_CreateWindow(
             "DoomLike",              // titre
@@ -25,7 +28,7 @@ int main(int argc, char* args[]) {
             SDL_WINDOWPOS_UNDEFINED,  // position initiale y
             width,                      // largeur, en pixels
             height,                      // hauteur, en pixels
-            SDL_WINDOW_SHOWN          // flags
+            SDL_WINDOW_SHOWN         // flags
     );
 
     if (!window) {
@@ -43,41 +46,77 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
+    SDL_Texture* myTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/Wall.bmp", renderer);
+    if (!myTexture) {
+        SDL_Log("Failed to load texture: %s", SDL_GetError());
+        return -1;
+    }
+
     Player player{70,70};
+
+    player.myTexture = myTexture;
+
+    int frameCount = 0;
+    Uint32 startTime = SDL_GetTicks(), lastTime = startTime;
 
     SDL_Event event;
     bool running = true;
     while (running) {
-        while (SDL_PollEvent(&event) != 0) {
+
+        while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT:
                     running = false;
                     break;
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
+                        case SDLK_ESCAPE:
+                            running = false;
+                        case SDLK_q:
                         case SDLK_LEFT:
-                            player.angle-= v_angle;
-                            break;
-                        case SDLK_RIGHT:
-                            player.angle+= v_angle;
-                            break;
-                        case SDLK_UP:
-                            if(!isCollision(player.posX+cos(player.angle*PI/180)*vitesse, player.posY-sin(player.angle*PI/180)*vitesse)){
-                                player.posX+=cos(player.angle*PI/180)*vitesse;
-                                player.posY-=sin(player.angle*PI/180)*vitesse;
+                            if (!isCollision(player.posX - sin(player.angle * M_PI / 180) * vitesse,
+                                             player.posY - cos(player.angle * M_PI / 180) * vitesse)) {
+                                player.posX += sin(player.angle * M_PI / 180) * vitesse;
+                                player.posY += cos(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
-                        case SDLK_DOWN:
-                            if(!isCollision(player.posX-cos(player.angle*PI/180)*vitesse,player.posY+sin(player.angle*PI/180)*vitesse) ){
-                                player.posX-=cos(player.angle*PI/180)*vitesse;
-                                player.posY+=sin(player.angle*PI/180)*vitesse;
+                        case SDLK_d:
+                        case SDLK_RIGHT:  // Strafe right
+                            if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
+                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
+                                player.posX -= sin(player.angle * M_PI / 180) * vitesse;
+                                player.posY -= cos(player.angle * M_PI / 180) * vitesse;
+                            }
+                            break;
+                        case SDLK_z:
+                        case SDLK_UP:  // Move forward
+                            if (!isCollision(player.posX + cos(player.angle * M_PI / 180) * vitesse,
+                                             player.posY - sin(player.angle * M_PI / 180) * vitesse)) {
+                                player.posX += cos(player.angle * M_PI / 180) * vitesse;
+                                player.posY -= sin(player.angle * M_PI / 180) * vitesse;
+                            }
+                            break;
+                        case SDLK_s:
+                        case SDLK_DOWN:  // Move backward
+                            if (!isCollision(player.posX - cos(player.angle * M_PI / 180) * vitesse,
+                                             player.posY + sin(player.angle * M_PI / 180) * vitesse)) {
+                                player.posX -= cos(player.angle * M_PI / 180) * vitesse;
+                                player.posY += sin(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                     }
                     break;
+                case SDL_MOUSEMOTION:
+                    player.angle += event.motion.xrel * sensitivity;
+                    player.angle = fmod(player.angle, 360.0);  // Normalize angle to 0-360 degrees
+                    if (player.angle < 0) player.angle += 360.0;  // Adjust for negative turns
+                    break;
             }
         }
 
+        SDL_RenderClear(renderer);  // Clear the screen before new drawing
+
+        // Drawing functions
         DisplayBackground(renderer);
         player.line_view(renderer);
         DisplayMap(renderer);
@@ -86,10 +125,23 @@ int main(int argc, char* args[]) {
         cursor(renderer);
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(1000 / fps);
+
+        frameCount++;
+
+        // Calculate and display FPS every second
+        Uint32 currentTime = SDL_GetTicks();
+        Uint32 elapsedMS = currentTime - lastTime;
+
+        if (elapsedMS >= 1000) {
+            float fps = frameCount / (elapsedMS / 1000.0f);
+            std::cout << "FPS: " << fps << std::endl;
+            frameCount = 0;
+            lastTime = currentTime;
+        }
     }
 
     // Nettoyage
+    SDL_DestroyTexture(myTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -163,4 +215,21 @@ void cursor(SDL_Renderer* renderer){
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderDrawLine(renderer, width/2-sizeCursoe, width/2, width/2+sizeCursoe, width/2);
     SDL_RenderDrawLine(renderer, width/2, width/2-sizeCursoe, width/2, width/2+sizeCursoe);
+}
+
+SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer) {
+    SDL_Surface* bmpSurface = SDL_LoadBMP(filepath);
+    if (!bmpSurface) {
+        SDL_Log("Unable to load BMP file: %s", SDL_GetError());
+        return nullptr;
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, bmpSurface);
+    SDL_FreeSurface(bmpSurface);  // Libérez la surface après la création de la texture
+
+    if (!texture) {
+        SDL_Log("Unable to create texture from BMP file: %s", SDL_GetError());
+    }
+
+    return texture;
 }

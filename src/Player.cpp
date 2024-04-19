@@ -35,13 +35,13 @@ void Player::line_view(SDL_Renderer* renderer) const {
                         (map[(x_detect)/(width/nb_case_w) + (y_detect+1) /(height/nb_case_h)*nb_case_w]==1 &&
                          map[(x_detect)/(width/nb_case_w) + (y_detect-1) /(height/nb_case_h)*nb_case_w]==1 )
                         ){
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-                    SDL_RenderFillRect(renderer, &rect);
+                    SDL_SetRenderDrawColor(renderer, 128,128,128, 255);
                 }
                 else{
-                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                    SDL_RenderFillRect(renderer, &rect);
+                    SDL_SetRenderDrawColor(renderer, 155,155,155, 255);
                 }
+
+                SDL_RenderFillRect(renderer, &rect);
 
             }
             d_detect++;
