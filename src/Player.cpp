@@ -4,211 +4,28 @@
 
 #include "../include/Player.h"
 
-struct Point {
-    int x;
-    int y;
-};
+Player::Player(int x, int y) : posX(x), posY(y){}
 
-Player::Player(int x, int y, Map* map) : posX(x), posY(y), map(map){}
+void Player::line_view(SDL_Renderer* renderer, float angleLine) const{
+    int d_detect=0;
+    bool hit_wall = false;
 
-
-int roundToGridSize(int value, bool up) {
-    int gridSize = height / size_map;
-    return up ? ((value + gridSize - 1) / gridSize) * gridSize : (value / gridSize) * gridSize;
-}
-
-
-void Player::SetPosition(int v) {
-    float angleRadians = angle * PI / 180.0;
-    int proposedX = posX + cos(angleRadians) * v;
-    int proposedY = posY + sin(angleRadians) * v;
-
-    switch (Collision(proposedX, proposedY)) {
-        case COLLISION_TOP:
-            posY = roundToGridSize(proposedY, true);
-            posX = proposedX;
-            break;
-        case COLLISION_BOTTOM:
-            posY =  roundToGridSize(proposedY + (height / size_map), false)- playerHeight;
-            posX = proposedX;
-            break;
-        case COLLISION_RIGHT:
-            posX = roundToGridSize(proposedX + (width / size_map), true) - playerWidth - (width / size_map);
-            posY = proposedY;
-            break;
-        case COLLISION_LEFT:
-            posX = roundToGridSize(proposedX, true);
-            posY = proposedY;
-            break;
-        case COLLISION_OK:
-            posX = proposedX;
-            posY = proposedY;
-            break;
-        case COLLISION_OUTER:
-            // Gérer le cas où le joueur est à l'extérieur des limites autorisées
-            break;
-        default:
-            cout << "Error in collision detection" << endl;
-    }
-}
-
-
-
-CollisionResult Player::Collision(int x, int y) const {
-    // cout << x << ":" << y << endl;
-
-    // Vérification préliminaire pour s'assurer que le joueur reste dans les limites
-    if (x < 0 || y < 0 || (x + playerWidth > width) || (y + playerHeight > height)) {
-        return COLLISION_OUTER;
-    }
-
-    // Calcul des indices des coins dans la grille de la carte
-    int left = x / (width / nb_case_w);
-    int right = (x + playerWidth - 1) / (width / nb_case_w);
-    int top = y / (height / nb_case_h);
-    int bottom = (y + playerHeight - 1) / (height / nb_case_h);
-
-    if ((map->getTile(left, top) == 1 && map->getTile(right, top) == 1)){
-        return COLLISION_TOP;
-    }
-
-    if ((map->getTile(left, top) == 1 && map->getTile(left, bottom) == 1)){
-        return COLLISION_LEFT;
-    }
-
-
-    if ((map->getTile(left, bottom) == 1 && map->getTile(right, bottom) == 1)){
-        return COLLISION_BOTTOM;
-    }
-
-    if ((map->getTile(right, bottom) == 1 && map->getTile(right, top) == 1)){
-        return COLLISION_RIGHT;
-    }
-
-    return COLLISION_OK;
-}
-
-Point next_grid_intersection(double x, double y, double theta) {
-    // Convertir l'angle en radians
-    double theta_radians = theta * M_PI / 180.0;
-
-    // Calculer les composantes du vecteur direction
-    double dx = std::cos(theta_radians);
-    double dy = std::sin(theta_radians);
-
-    // Trouver le prochain multiple de SIZE_GRID pour x et y
-    double next_x, next_y;
-    if (dx > 0) {
-        next_x = std::ceil(x / GRID_SIZE) * GRID_SIZE;
-    } else if (dx < 0) {
-        next_x = std::floor(x / GRID_SIZE) * GRID_SIZE;
-    } else {
-        next_x = x;
-    }
-
-    if (dy > 0) {
-        next_y = std::ceil(y / GRID_SIZE) * GRID_SIZE;
-    } else if (dy < 0) {
-        next_y = std::floor(y / GRID_SIZE) * GRID_SIZE;
-    } else {
-        next_y = y;
-    }
-
-    // Calculer la distance jusqu'aux prochaines intersections
-    double dist_x = dx != 0 ? (next_x - x) / dx : std::numeric_limits<double>::infinity();
-    double dist_y = dy != 0 ? (next_y - y) / dy : std::numeric_limits<double>::infinity();
-
-    Point cible{};
-    // Comparer les distances et choisir la plus courte
-    if (std::abs(dist_x) < std::abs(dist_y)) {
-        return cible = {static_cast<int>(next_x), static_cast<int>(y + dy * dist_x)};
-    } else {
-        return cible = {static_cast<int>(x + dx * dist_y), static_cast<int>(next_y)};
-    }
-}
-
-
-bool Player::CollisionRayon(int startX, int startY, int x, int y) {
-    int tileX = x / (width / nb_case_w);
-    int tileY = y / (height / nb_case_h);
-
-    if (x % GRID_SIZE == 0 && y % GRID_SIZE == 0){
-        if (startY < y) {
-            if (startX < x) {
-                return map->getTile(tileX + 1, tileY + 1) == 1;
-            } else {
-                return map->getTile(tileX - 1, tileY + 1) == 1;
-            }
-        } else {
-            if (startX < x) {
-                return map->getTile(tileX + 1, tileY - 1) == 1;
-            } else {
-                return map->getTile(tileX - 1, tileY- 1) == 1;
-            }
-        }
-    }
-    if (x % GRID_SIZE == 0) {
-        if (startX < x) {
-            return map->getTile(tileX, tileY) == 1;
-        } else {
-            return map->getTile(tileX - 1, tileY) == 1;
-        }
-    }
-    if (y % GRID_SIZE == 0) {
-        if (startY < y) {
-            return map->getTile(tileX, tileY) == 1;
-        } else {
-            return map->getTile(tileX, tileY - 1) == 1;
-        }
-    }
-}
-
-void Player::TraceRayon(SDL_Renderer* renderer, bool mode) {
-    int stepVue = 0;
-    for (float i = angle - fov/2; i < angle + fov/2; i += precision_angle){
-        double tempX = posX + playerWidth / 2.0;
-        double tempY = posY + playerHeight / 2.0;
-
-        bool running = true;
-        Point cible;
-
-        int step = 0;
-
-        while (running) {
-            cible = next_grid_intersection(tempX, tempY, i);
-            if (CollisionRayon(tempX, tempY, cible.x, cible.y)) {
-                running = false;
-            } else {
-                if (tempX < cible.x) {
-                    tempX = cible.x+1;
-                } else{
-                    tempX = cible.x-1;
-                }
-                if (tempY < cible.y) {
-                    tempY = cible.y+1;
-                } else{
-                    tempY = cible.y-1;
-                }
-            }
-            if (step >= size_map){
-                running = false;
-            }
-            step ++;
-        }
-        int wide = width / (fov/precision_angle);
-        double distance = sqrt(pow(cible.x - (posX + playerWidth / 2), 2) + pow(cible.y - (posY + playerHeight / 2), 2));
-        double rectHeight = 50000 / (cos((fov / 2 - (i - angle)) * M_PI / 180) * distance);
-        SDL_Rect rect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, (int)rectHeight};
-
-        if (mode){
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-            SDL_RenderFillRect(renderer, &rect);
-        }
-        else{
+    while (!hit_wall){
+        int x_detect = posX + playerWidth/2 +cos(angleLine*PI/180)*d_detect;
+        int y_detect = posY + playerHeight/2 -sin(angleLine*PI/180)*d_detect;
+        if(map[x_detect/(width/nb_case_w) + y_detect /(height/nb_case_h)*nb_case_w]==1){
+            hit_wall = true;
+            float distance = sqrt(pow(x_detect - posX,2)+pow(y_detect - posY,2));
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
-            SDL_RenderDrawLine(renderer, posX / MiniMap + playerWidth / 2 , posY /MiniMap  + playerHeight / 2 , cible.x / MiniMap, cible.y / MiniMap);
+            SDL_RenderDrawLine(renderer, posX / MiniMap + playerWidth / 2 , posY /MiniMap  + playerHeight / 2 , x_detect / MiniMap, y_detect / MiniMap);
         }
-
-        stepVue ++;
+        d_detect++;
     }
+}
+
+void Player::lineCenter(SDL_Renderer* renderer){
+    int x_detect = posX + playerWidth/2 +cos(angle*PI/180)*100;
+    int y_detect = posY + playerHeight/2 -sin(angle*PI/180)*100;
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Set the color to red for the ray
+    SDL_RenderDrawLine(renderer, posX / MiniMap + playerWidth / 2 , posY /MiniMap  + playerHeight / 2 , x_detect / MiniMap, y_detect / MiniMap);
 }

@@ -11,6 +11,5 @@ link_libraries(SDL2)
 add_executable(DoomLike main.cpp
         src/Player.cpp
         include/Player.h
-        src/Map.cpp
         include/Map.h
         include/constante.h)

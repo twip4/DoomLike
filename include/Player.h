@@ -10,29 +10,19 @@
 #include <algorithm>
 #include "constante.h"
 
-enum CollisionResult {
-    COLLISION_TOP,
-    COLLISION_BOTTOM,
-    COLLISION_RIGHT,
-    COLLISION_LEFT,
-    COLLISION_OK,
-    COLLISION_OUTER,
-    COLLISION_ERROR
+struct Point {
+    int x;
+    int y;
 };
 
 class Player {
-private:
-    CollisionResult Collision(int x, int y) const;
 public:
     int posX;
     int posY;
-    int rayon = 1;
-    Map* map;
-    float angle = 90;
-    Player(int x, int y, Map* map);
-    void TraceRayon(SDL_Renderer* renderer,bool mode);
-    void SetPosition(int v);
-    bool CollisionRayon(int startX, int startY, int x, int y);
+    int angle = 90;
+    Player(int x, int y);
+    void line_view(SDL_Renderer* renderer, float nb_dec) const;
+    void lineCenter(SDL_Renderer* renderer);
 };
 
 #endif //DOOMLIKE_PLAYER_H

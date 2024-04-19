@@ -5,9 +5,10 @@
 #include "include/constante.h"
 #include <cmath>
 
-void DisplayMap(Map &map,SDL_Renderer* renderer);
+void DisplayMap(SDL_Renderer* renderer);
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
 void DisplayBackground(SDL_Renderer* renderer);
+bool isCollision(int x, int y);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -41,10 +42,7 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    Map map(size_map,size_map);
-    map.init("../assets/map.txt");
-
-    Player player{70,70,&map};
+    Player player{70,70};
 
     SDL_Event event;
     bool running = true;
@@ -57,18 +55,22 @@ int main(int argc, char* args[]) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                         case SDLK_LEFT:
-                            player.angle -= 5;
-                            if (player.angle < 0) player.angle += 360; // If angle goes negative, wrap it around
+                            player.angle+= v_angle;
                             break;
                         case SDLK_RIGHT:
-                            player.angle += 5;
-                            player.angle = fmod(player.angle, 360.0);  // Wrap around if the angle exceeds 359
+                            player.angle-= v_angle;
                             break;
                         case SDLK_UP:
-                            player.SetPosition(vitesse);
+                            if(!isCollision(player.posX+cos(player.angle*PI/180)*vitesse, player.posY-sin(player.angle*PI/180)*vitesse)){
+                                player.posX+=cos(player.angle*PI/180)*vitesse;
+                                player.posY-=sin(player.angle*PI/180)*vitesse;
+                            }
                             break;
                         case SDLK_DOWN:
-                            player.SetPosition(-vitesse);
+                            if(!isCollision(player.posX-cos(player.angle*PI/180)*vitesse,player.posY+sin(player.angle*PI/180)*vitesse) ){
+                                player.posX-=cos(player.angle*PI/180)*vitesse;
+                                player.posY+=sin(player.angle*PI/180)*vitesse;
+                            }
                             break;
                     }
                     break;
@@ -76,10 +78,13 @@ int main(int argc, char* args[]) {
         }
 
         DisplayBackground(renderer);
-        player.TraceRayon(renderer,true);
-        DisplayMap(map, renderer);
-        player.TraceRayon(renderer,false);
+        DisplayMap(renderer);
         DisplayPerso(player, renderer);
+        for (float i = player.angle - fov/2; i < player.angle + fov/2; i += precision_angle){
+            player.line_view(renderer,i);
+        }
+        player.lineCenter(renderer);
+
 
         SDL_RenderPresent(renderer);
         SDL_Delay(1000 / fps);
@@ -93,22 +98,21 @@ int main(int argc, char* args[]) {
     return 0;
 }
 
-void DisplayMap(Map &map,SDL_Renderer* renderer){
-    for(int i = 0; i < map.getWidth(); i++){
-        for(int j = 0; j < map.getHeight(); j++){
+void DisplayMap(SDL_Renderer* renderer){
+    for(int i=0;i<nb_case_w*nb_case_h;i++){
             SDL_Rect rect;
-            rect.x = width/size_map/MiniMap*i;
-            rect.y = height/size_map/MiniMap*j;
+            rect.x = i%nb_case_w*width/nb_case_w/MiniMap;
+            rect.y = floor(i/nb_case_h)*height/nb_case_h/MiniMap;
             rect.w = width/size_map/MiniMap;
             rect.h = height/size_map/MiniMap;
-            if(map.getTile(i,j)){
+            if(map[i]==1){
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                 SDL_RenderFillRect(renderer, &rect);
-            } else{
+            }
+            else{
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
                 SDL_RenderFillRect(renderer, &rect);
             }
-        }
     }
 }
 
@@ -142,4 +146,16 @@ void DisplayBackground(SDL_Renderer* renderer){
     SDL_RenderFillRect(renderer, &rect);
 }
 
+bool isCollision(int x, int y) {
+    std::array<int, 4> list_indice{
+            (x+playerWidth)/(width/nb_case_w) + (y+playerHeight)/(height/nb_case_h)*nb_case_w,
+            x/(width/nb_case_w) + y /(height/nb_case_h)*nb_case_w,
+            (x+playerWidth)/(width/nb_case_w) + y /(height/nb_case_h)*nb_case_w,
+            x/(width/nb_case_w) + (y+playerHeight)/(height/nb_case_h)*nb_case_w
+    };
 
+    if( map[list_indice[0]]==1 || map[list_indice[1]]==1||  map[list_indice[2]]==1||  map[list_indice[3]]==1  ){
+        return true;
+    }
+    return false;
+}

@@ -9,7 +9,6 @@ const int width = 1000;
 const int height = 1000;
 const int size_map = 20;
 const int rapportPlayerMaps = 8;
-const int GRID_SIZE = width/size_map;
 const int MiniMap = 5;
 
 const int nb_case_w = 20;
@@ -22,7 +21,8 @@ const int vitesse = width/size_map/rapportPlayerMaps;
 const int v_angle = 10;
 const int fov = 80;
 const float precision_angle = 0.08;
+const int NbRayon = fov/precision_angle;
 
-const int fps = 80;
+const int fps = 120;
 
 #endif //DOOMLIKE_CONSTANTE_H
