@@ -18,7 +18,7 @@ const int playerWidth = (width / nb_case_w) / rapportPlayerMaps;
 const int playerHeight = (height / nb_case_h) / rapportPlayerMaps;
 
 const int vitesse = width/size_map/rapportPlayerMaps;
-const int v_angle = 10;
+const int v_angle = 5;
 const int fov = 60;
 const float precision_angle = 0.06;
 const int NbRayon = fov/precision_angle;

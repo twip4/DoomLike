@@ -79,9 +79,10 @@ int main(int argc, char* args[]) {
         }
 
         DisplayBackground(renderer);
-        DisplayPerso(player, renderer);
         player.line_view(renderer);
         DisplayMap(renderer);
+        DisplayPerso(player, renderer);
+        player.lineCenter(renderer);
         cursor(renderer);
 
         SDL_RenderPresent(renderer);
