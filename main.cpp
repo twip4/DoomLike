@@ -5,8 +5,6 @@
 #include "include/constante.h"
 #include <cmath>
 
-
-void DisplayMap(SDL_Renderer* renderer);
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
 void DisplayBackground(SDL_Renderer* renderer);
 bool isCollision(int x, int y);
@@ -28,8 +26,14 @@ int main(int argc, char* args[]) {
             SDL_WINDOWPOS_UNDEFINED,  // position initiale y
             width,                      // largeur, en pixels
             height,                      // hauteur, en pixels
-            SDL_WINDOW_SHOWN         // flags
+            SDL_WINDOW_FULLSCREEN         // flags
     );
+
+    // Rendre la souris invisible
+    SDL_ShowCursor(SDL_DISABLE);
+
+    // Activer le mode de mouvement relatif pour la souris
+    SDL_SetRelativeMouseMode(SDL_TRUE);
 
     if (!window) {
         std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
@@ -52,7 +56,7 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    Player player{70,70};
+    Player player{150,150};
 
     player.myTexture = myTexture;
 
@@ -119,9 +123,7 @@ int main(int argc, char* args[]) {
         // Drawing functions
         DisplayBackground(renderer);
         player.line_view(renderer);
-        DisplayMap(renderer);
         DisplayPerso(player, renderer);
-        player.lineCenter(renderer);
         cursor(renderer);
 
         SDL_RenderPresent(renderer);
@@ -149,24 +151,6 @@ int main(int argc, char* args[]) {
     return 0;
 }
 
-void DisplayMap(SDL_Renderer* renderer){
-    for(int i=0;i<nb_case_w*nb_case_h;i++){
-            SDL_Rect rect;
-            rect.x = i%nb_case_w*width/nb_case_w/MiniMap;
-            rect.y = floor(i/nb_case_h)*height/nb_case_h/MiniMap;
-            rect.w = width/size_map/MiniMap;
-            rect.h = height/size_map/MiniMap;
-            if(map[i]==1){
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderFillRect(renderer, &rect);
-            }
-            else{
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_RenderFillRect(renderer, &rect);
-            }
-    }
-}
-
 void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_Rect rect;
     rect.x = player.posX/MiniMap;
@@ -182,16 +166,16 @@ void DisplayBackground(SDL_Renderer* renderer){
     SDL_Rect rect;
     rect.x = 0;
     rect.y = 0;
-    rect.w = 1000;
-    rect.h = 500;
+    rect.w = width;
+    rect.h = height/2;
 
     SDL_SetRenderDrawColor(renderer, 91, 228, 255, 255);
     SDL_RenderFillRect(renderer, &rect);
 
     rect.x = 0;
-    rect.y = 500;
-    rect.w = 1000;
-    rect.h = 500;
+    rect.y = height/2;
+    rect.w = width;
+    rect.h = height/2;
 
     SDL_SetRenderDrawColor(renderer, 105, 55, 6, 255);
     SDL_RenderFillRect(renderer, &rect);
@@ -213,8 +197,8 @@ bool isCollision(int x, int y) {
 
 void cursor(SDL_Renderer* renderer){
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderDrawLine(renderer, width/2-sizeCursoe, width/2, width/2+sizeCursoe, width/2);
-    SDL_RenderDrawLine(renderer, width/2, width/2-sizeCursoe, width/2, width/2+sizeCursoe);
+    SDL_RenderDrawLine(renderer, width/2 - sizeCursor, height / 2, width / 2 + sizeCursor, height / 2);
+    SDL_RenderDrawLine(renderer, width/2, height/2 - sizeCursor, width / 2, height / 2 + sizeCursor);
 }
 
 SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer) {

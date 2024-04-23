@@ -9,6 +9,7 @@
 #include "cmath"
 #include <algorithm>
 #include "constante.h"
+#include <SDL2/SDL2_gfxPrimitives.h>
 
 struct Point {
     int x;
