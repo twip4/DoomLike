@@ -11,7 +11,7 @@ Player::Player(int x, int y) : posX(x), posY(y){}
 void Player::line_view(SDL_Renderer* renderer) const {
     int stepVue = 0;
     int textureWidth, textureHeight;
-    SDL_QueryTexture(myTexture, NULL, NULL, &textureWidth, &textureHeight);
+    SDL_QueryTexture(wallTexture, NULL, NULL, &textureWidth, &textureHeight);
     DisplayMap(renderer);
     for (float angleLine = angle - fov / 2; angleLine < angle + fov / 2; angleLine += precision_angle) {
         int d_detect = 0;
@@ -43,7 +43,7 @@ void Player::line_view(SDL_Renderer* renderer) const {
                      map[(x_detect)/(width/nb_case_w) + (y_detect-1) /(height/nb_case_h)*nb_case_w]==1)) {
                     SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255); // Lighter shade
                     // Calculating the exact texture slice
-                    int textureOffset = y_detect % textureWidth-1;
+                    int textureOffset = y_detect % textureWidth;
                     srcRect = {textureOffset, 0, wide, textureHeight};  // Taking a 1-pixel wide slice
                     destRect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
                 } else {
@@ -55,7 +55,7 @@ void Player::line_view(SDL_Renderer* renderer) const {
                 }
 
                 SDL_RenderFillRect(renderer, &destRect); // Fill the rectangle first to provide a background color
-                SDL_RenderCopy(renderer, myTexture, &srcRect, &destRect); // Render the texture slice over it
+                SDL_RenderCopy(renderer, wallTexture, &srcRect, &destRect); // Render the texture slice over it
             }
 
             d_detect++;

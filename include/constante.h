@@ -22,15 +22,16 @@ const int nb_case_h = 30;
 const int playerWidth = (width / nb_case_w) / rapportPlayerMaps;
 const int playerHeight = (height / nb_case_h) / rapportPlayerMaps;
 
-const int vitesse = width/size_map/rapportPlayerMaps/(width/2500);
-const int v_angle = 5;
+const int vitesse = width/size_map/rapportPlayerMaps/(width/3000);
 const int fov = 60;
 const float precision_angle = 0.02;
 const int NbRayon = fov/precision_angle;
 
 const int dfps = 10000;
 
-const int sizeCursor = 20;
+const int sizeCursor = 10;
 
-const float sensitivity = 0.2;
+const int zoomGroundTexture = 10;
+
+const float sensitivity = 0.1;
 #endif //DOOMLIKE_CONSTANTE_H

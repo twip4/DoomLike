@@ -6,7 +6,7 @@
 #include <cmath>
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
-void DisplayBackground(SDL_Renderer* renderer);
+void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, SDL_Texture* groundTexture, int angle, int viewX, int viewY);
 bool isCollision(int x, int y);
 void cursor(SDL_Renderer* renderer);
 SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
@@ -50,15 +50,27 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    SDL_Texture* myTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/Wall.bmp", renderer);
-    if (!myTexture) {
+    SDL_Texture* wallTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/Wall.bmp", renderer);
+    if (!wallTexture) {
         SDL_Log("Failed to load texture: %s", SDL_GetError());
         return -1;
     }
 
-    Player player{150,150};
+    SDL_Texture* groundTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/ground.bmp", renderer);
+    if (!groundTexture) {
+        SDL_Log("Failed to load texture: %s", SDL_GetError());
+        return -1;
+    }
 
-    player.myTexture = myTexture;
+    SDL_Texture* skyTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/sky.bmp", renderer);
+    if (!skyTexture) {
+        SDL_Log("Failed to load texture: %s", SDL_GetError());
+        return -1;
+    }
+
+    Player player{250,250};
+
+    player.wallTexture = wallTexture;
 
     int frameCount = 0;
     Uint32 startTime = SDL_GetTicks(), lastTime = startTime;
@@ -121,7 +133,7 @@ int main(int argc, char* args[]) {
         SDL_RenderClear(renderer);  // Clear the screen before new drawing
 
         // Drawing functions
-        DisplayBackground(renderer);
+        DisplayBackground(renderer, skyTexture, groundTexture, player.angle, player.posX, player.posY);
         player.line_view(renderer);
         DisplayPerso(player, renderer);
         cursor(renderer);
@@ -136,14 +148,14 @@ int main(int argc, char* args[]) {
 
         if (elapsedMS >= 1000) {
             float fps = frameCount / (elapsedMS / 1000.0f);
-            std::cout << "FPS: " << fps << std::endl;
+            // std::cout << "FPS: " << fps << std::endl;
             frameCount = 0;
             lastTime = currentTime;
         }
     }
 
     // Nettoyage
-    SDL_DestroyTexture(myTexture);
+    SDL_DestroyTexture(wallTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -162,24 +174,108 @@ void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_RenderFillRect(renderer, &rect);
 }
 
-void DisplayBackground(SDL_Renderer* renderer){
-    SDL_Rect rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = width;
-    rect.h = height/2;
+SDL_Texture* RotateTexture(SDL_Renderer* renderer, SDL_Texture* srcTexture, double angle, int originalWidth, int originalHeight, int x , int y) {
+    // Crée une texture de rendu pour le résultat
+    SDL_Texture* result = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, originalWidth, originalHeight);
+    SDL_SetTextureBlendMode(result, SDL_BLENDMODE_BLEND);
 
-    SDL_SetRenderDrawColor(renderer, 91, 228, 255, 255);
-    SDL_RenderFillRect(renderer, &rect);
+    // Définit cette texture comme cible de rendu
+    SDL_SetRenderTarget(renderer, result);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
 
-    rect.x = 0;
-    rect.y = height/2;
-    rect.w = width;
-    rect.h = height/2;
+    // Calcule le centre de la texture originale
+    SDL_Point center = {x, y};
 
-    SDL_SetRenderDrawColor(renderer, 105, 55, 6, 255);
-    SDL_RenderFillRect(renderer, &rect);
+    // Dessine la texture originale sur la nouvelle texture cible avec rotation
+    SDL_Rect srcRect = {0, 0, originalWidth, originalHeight};
+    SDL_Rect destRect = {0, 0, originalWidth, originalHeight};
+    SDL_RenderCopyEx(renderer, srcTexture, &srcRect, &destRect, angle, &center, SDL_FLIP_NONE);
+
+    // Restaure la cible de rendu
+    SDL_SetRenderTarget(renderer, NULL);
+
+    return result;
 }
+
+void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, SDL_Texture* groundTexture, int angle, int viewX, int viewY) {
+    int skyTextureWidth, skyTextureHeight;
+    SDL_QueryTexture(skyTexture, NULL, NULL, &skyTextureWidth, &skyTextureHeight);
+
+    // Calcul de textureOffset pour le déplacement basé sur l'angle
+    int textureOffset = (angle * 16) % skyTextureWidth;
+
+    // Gestion du cas où le segment dépasse la fin de la texture
+    int effectiveWidth = (textureOffset + 960 > skyTextureWidth) ? (skyTextureWidth - textureOffset) : 960;
+
+    // Rectangle source pour la partie principale de la texture
+    SDL_Rect srcRect1 = {
+            textureOffset,
+            0,
+            effectiveWidth,
+            skyTextureHeight
+    };
+
+    // Rectangle source pour la partie qui boucle si nécessaire
+    SDL_Rect srcRect2 = {
+            0,  // Début de la texture
+            0,
+            960 - effectiveWidth, // La partie restante pour compléter 960 pixels si nécessaire
+            skyTextureHeight
+    };
+
+    // Rectangle destination pour srcRect1
+    SDL_Rect destRect1 = {
+            0,
+            0,
+            (effectiveWidth * width) / 960,  // Ajuster proportionnellement à la largeur de l'écran
+            height / 2
+    };
+
+    // Rectangle destination pour srcRect2
+    SDL_Rect destRect2 = {
+            destRect1.w,  // À la fin de destRect1
+            0,
+            width - destRect1.w,  // Reste de la largeur de l'écran
+            height / 2
+    };
+
+    // Afficher la texture principale
+    SDL_RenderFillRect(renderer, &destRect1);
+    SDL_RenderCopy(renderer, skyTexture, &srcRect1, &destRect1);
+
+    // Afficher la partie bouclée si nécessaire
+    if (srcRect2.w > 0) {
+        SDL_RenderFillRect(renderer, &destRect2);
+        SDL_RenderCopy(renderer, skyTexture, &srcRect2, &destRect2);
+    }
+
+    int textureWidth, textureHeight;
+    SDL_QueryTexture(groundTexture, NULL, NULL, &textureWidth, &textureHeight);
+
+    // Rotation de la texture
+    SDL_Texture* rotatedTexture = RotateTexture(renderer, groundTexture, angle, textureWidth, textureHeight, viewX, viewY);
+
+    // Calcul du rectangle source pour le sol avec zoom
+    int visibleWidth = width / zoomGroundTexture;  // Largeur visible de la texture après application du zoom
+    int visibleHeight = (height / 2) / zoomGroundTexture;  // Hauteur visible de la texture après application du zoom
+
+    SDL_Rect srcRectGround = {
+            viewX - width/2,
+            viewY - height/2,
+            visibleWidth,  // Réduire la largeur de la zone captée pour augmenter le zoom
+            visibleHeight  // Réduire la hauteur de la zone captée pour augmenter le zoom
+    };
+    SDL_Rect destRect = {0, height / 2, width, height / 2};
+    SDL_RenderCopy(renderer, rotatedTexture, &srcRectGround, &destRect);
+
+    // Libération de la texture temporaire
+    SDL_DestroyTexture(rotatedTexture);
+}
+
+
+
+
 
 bool isCollision(int x, int y) {
     std::array<int, 4> list_indice{
@@ -196,7 +292,7 @@ bool isCollision(int x, int y) {
 }
 
 void cursor(SDL_Renderer* renderer){
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     SDL_RenderDrawLine(renderer, width/2 - sizeCursor, height / 2, width / 2 + sizeCursor, height / 2);
     SDL_RenderDrawLine(renderer, width/2, height/2 - sizeCursor, width / 2, height / 2 + sizeCursor);
 }
