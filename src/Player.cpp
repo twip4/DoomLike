@@ -41,14 +41,13 @@ void Player::line_view(SDL_Renderer* renderer) const {
                      map[(x_detect-1)/(width/nb_case_w) + y_detect /(height/nb_case_h)*nb_case_w]==0) &&
                     (map[(x_detect)/(width/nb_case_w) + (y_detect+1) /(height/nb_case_h)*nb_case_w]==1 &&
                      map[(x_detect)/(width/nb_case_w) + (y_detect-1) /(height/nb_case_h)*nb_case_w]==1)) {
-                    SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255); // Lighter shade
-                    // Calculating the exact texture slice
+
+                    SDL_SetTextureColorMod(wallTexture, 168, 168, 168);
                     int textureOffset = y_detect % textureWidth;
                     srcRect = {textureOffset, 0, wide, textureHeight};  // Taking a 1-pixel wide slice
                     destRect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
                 } else {
-                    SDL_SetRenderDrawColor(renderer, 155, 155, 155, 255); // Darker shade
-                    // Calculating the exact texture slice
+                    SDL_SetTextureColorMod(wallTexture, 128, 128, 128);
                     int textureOffset = x_detect % textureWidth;
                     srcRect = {textureOffset, 0, wide, textureHeight};  // Taking a 1-pixel wide slice
                     destRect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
