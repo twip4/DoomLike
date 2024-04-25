@@ -90,16 +90,16 @@ int main(int argc, char* args[]) {
                             running = false;
                         case SDLK_q:
                         case SDLK_LEFT:
-                            if (!isCollision(player.posX - sin(player.angle * M_PI / 180) * vitesse,
-                                             player.posY - cos(player.angle * M_PI / 180) * vitesse)) {
+                            if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
+                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX += sin(player.angle * M_PI / 180) * vitesse;
                                 player.posY += cos(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                         case SDLK_d:
                         case SDLK_RIGHT:  // Strafe right
-                            if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
-                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
+                            if (!isCollision(player.posX - sin(player.angle * M_PI / 180) * vitesse,
+                                             player.posY - cos(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX -= sin(player.angle * M_PI / 180) * vitesse;
                                 player.posY -= cos(player.angle * M_PI / 180) * vitesse;
                             }
@@ -174,30 +174,6 @@ void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_RenderFillRect(renderer, &rect);
 }
 
-SDL_Texture* RotateTexture(SDL_Renderer* renderer, SDL_Texture* srcTexture, double angle, int originalWidth, int originalHeight, int x , int y) {
-    // Crée une texture de rendu pour le résultat
-    SDL_Texture* result = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, originalWidth, originalHeight);
-    SDL_SetTextureBlendMode(result, SDL_BLENDMODE_BLEND);
-
-    // Définit cette texture comme cible de rendu
-    SDL_SetRenderTarget(renderer, result);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderClear(renderer);
-
-    // Calcule le centre de la texture originale
-    SDL_Point center = {x, y};
-
-    // Dessine la texture originale sur la nouvelle texture cible avec rotation
-    SDL_Rect srcRect = {0, 0, originalWidth, originalHeight};
-    SDL_Rect destRect = {0, 0, originalWidth, originalHeight};
-    SDL_RenderCopyEx(renderer, srcTexture, &srcRect, &destRect, angle, &center, SDL_FLIP_NONE);
-
-    // Restaure la cible de rendu
-    SDL_SetRenderTarget(renderer, NULL);
-
-    return result;
-}
-
 void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, SDL_Texture* groundTexture, int angle, int viewX, int viewY) {
     int skyTextureWidth, skyTextureHeight;
     SDL_QueryTexture(skyTexture, NULL, NULL, &skyTextureWidth, &skyTextureHeight);
@@ -250,27 +226,10 @@ void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, SDL_Text
         SDL_RenderCopy(renderer, skyTexture, &srcRect2, &destRect2);
     }
 
-    int textureWidth, textureHeight;
-    SDL_QueryTexture(groundTexture, NULL, NULL, &textureWidth, &textureHeight);
+    SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
 
-    // Rotation de la texture
-    SDL_Texture* rotatedTexture = RotateTexture(renderer, groundTexture, angle, textureWidth, textureHeight, viewX, viewY);
-
-    // Calcul du rectangle source pour le sol avec zoom
-    int visibleWidth = width / zoomGroundTexture;  // Largeur visible de la texture après application du zoom
-    int visibleHeight = (height / 2) / zoomGroundTexture;  // Hauteur visible de la texture après application du zoom
-
-    SDL_Rect srcRectGround = {
-            viewX - width/2,
-            viewY - height/2,
-            visibleWidth,  // Réduire la largeur de la zone captée pour augmenter le zoom
-            visibleHeight  // Réduire la hauteur de la zone captée pour augmenter le zoom
-    };
-    SDL_Rect destRect = {0, height / 2, width, height / 2};
-    SDL_RenderCopy(renderer, rotatedTexture, &srcRectGround, &destRect);
-
-    // Libération de la texture temporaire
-    SDL_DestroyTexture(rotatedTexture);
+    SDL_Rect fillRect = {0, height/2, width, height/2};
+    SDL_RenderFillRect(renderer, &fillRect);
 }
 
 
