@@ -9,20 +9,22 @@
 #include "cmath"
 #include <algorithm>
 #include "constante.h"
+#include "Monster.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
-
 struct Point {
-    int x;
-    int y;
+    double x, y;
 };
 
 class Player {
+private:
+    void DisplayMonster(float angleStart, float angleStop, SDL_Renderer* renderer) const;
 public:
     int posX;
     int posY;
     int angle = 0;
     SDL_Texture* wallTexture;
-    Player(int x, int y);
+    std::vector<Monster>* listMonster;
+    Player(int x, int y,std::vector<Monster>* listMonster);
     void line_view(SDL_Renderer* renderer) const;
     void lineCenter(SDL_Renderer* renderer);
 };

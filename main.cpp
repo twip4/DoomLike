@@ -1,15 +1,19 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include "include/Player.h"
+#include "include/Monster.h"
 #include "include/Map.h"
 #include "include/constante.h"
 #include <cmath>
+#include "vector"
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
-void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, SDL_Texture* groundTexture, int angle, int viewX, int viewY);
+void DisplayMonster(const std::vector<Monster>& listMonster, SDL_Renderer* renderer);
+void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, int angle);
 bool isCollision(int x, int y);
 void cursor(SDL_Renderer* renderer);
 SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
+
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -19,14 +23,19 @@ int main(int argc, char* args[]) {
     }
 
 
-    // Création de la fenêtre
+    SDL_DisplayMode dm;
+    SDL_GetDesktopDisplayMode(0, &dm); // Obtenez le mode d'affichage du bureau (0 pour le premier écran)
+
+    width = dm.w; // Mettre à jour la valeur de width
+    height = dm.h; // Mettre à jour la valeur de height
+
     SDL_Window* window = SDL_CreateWindow(
-            "DoomLike",              // titre
-            SDL_WINDOWPOS_UNDEFINED,  // position initiale x
-            SDL_WINDOWPOS_UNDEFINED,  // position initiale y
-            width,                      // largeur, en pixels
-            height,                      // hauteur, en pixels
-            SDL_WINDOW_FULLSCREEN         // flags
+            "DoomLike",                        // titre
+            SDL_WINDOWPOS_UNDEFINED,           // position initiale x
+            SDL_WINDOWPOS_UNDEFINED,           // position initiale y
+            width,                             // largeur, utilisez la largeur de l'écran
+            height,                             // hauteur, utilisez la hauteur de l'écran
+            SDL_WINDOW_FULLSCREEN_DESKTOP      // flags
     );
 
     // Rendre la souris invisible
@@ -68,7 +77,19 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    Player player{250,250};
+    SDL_Texture* monsterTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/monster.bmp", renderer);
+    if (!monsterTexture) {
+        SDL_Log("Failed to load texture: %s", SDL_GetError());
+        return -1;
+    }
+
+    std::vector<Monster> listMonster;
+
+    Monster monster{350,280,monsterTexture};
+    listMonster.push_back(monster);
+
+    Player player{200,150,&listMonster};
+
 
     player.wallTexture = wallTexture;
 
@@ -90,18 +111,18 @@ int main(int argc, char* args[]) {
                             running = false;
                         case SDLK_q:
                         case SDLK_LEFT:
-                            if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
-                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
-                                player.posX += sin(player.angle * M_PI / 180) * vitesse;
-                                player.posY += cos(player.angle * M_PI / 180) * vitesse;
-                            }
-                            break;
-                        case SDLK_d:
-                        case SDLK_RIGHT:  // Strafe right
                             if (!isCollision(player.posX - sin(player.angle * M_PI / 180) * vitesse,
                                              player.posY - cos(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX -= sin(player.angle * M_PI / 180) * vitesse;
                                 player.posY -= cos(player.angle * M_PI / 180) * vitesse;
+                            }
+                            break;
+                        case SDLK_d:
+                        case SDLK_RIGHT:  // Strafe right
+                            if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
+                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
+                                player.posX += sin(player.angle * M_PI / 180) * vitesse;
+                                player.posY += cos(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                         case SDLK_z:
@@ -123,7 +144,7 @@ int main(int argc, char* args[]) {
                     }
                     break;
                 case SDL_MOUSEMOTION:
-                    player.angle += event.motion.xrel * sensitivity;
+                    player.angle -= event.motion.xrel * sensitivity;
                     player.angle = fmod(player.angle, 360.0);  // Normalize angle to 0-360 degrees
                     if (player.angle < 0) player.angle += 360.0;  // Adjust for negative turns
                     break;
@@ -133,9 +154,10 @@ int main(int argc, char* args[]) {
         SDL_RenderClear(renderer);  // Clear the screen before new drawing
 
         // Drawing functions
-        DisplayBackground(renderer, skyTexture, groundTexture, player.angle, player.posX, player.posY);
+        DisplayBackground(renderer, skyTexture, player.angle);
         player.line_view(renderer);
         DisplayPerso(player, renderer);
+        DisplayMonster(listMonster, renderer);
         cursor(renderer);
 
         SDL_RenderPresent(renderer);
@@ -170,16 +192,29 @@ void DisplayPerso(Player &player, SDL_Renderer* renderer){
     rect.w = width/size_map/rapportPlayerMaps;
     rect.h = height/size_map/rapportPlayerMaps;
 
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRect(renderer, &rect);
 }
 
-void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, SDL_Texture* groundTexture, int angle, int viewX, int viewY) {
+void DisplayMonster(const std::vector<Monster>& listMonster, SDL_Renderer* renderer){
+    for (const auto &monster: listMonster) {
+        SDL_Rect rect;
+        rect.x = monster.posX/MiniMap;
+        rect.y = monster.posY/MiniMap;
+        rect.w = width/size_map/rapportPlayerMaps;
+        rect.h = height/size_map/rapportPlayerMaps;
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+        SDL_RenderFillRect(renderer, &rect);
+    }
+}
+
+void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, int angle) {
     int skyTextureWidth, skyTextureHeight;
     SDL_QueryTexture(skyTexture, NULL, NULL, &skyTextureWidth, &skyTextureHeight);
 
     // Calcul de textureOffset pour le déplacement basé sur l'angle
-    int textureOffset = (angle * 16) % skyTextureWidth;
+    int textureOffset = skyTextureWidth - ((angle * 16) % skyTextureWidth);
 
     // Gestion du cas où le segment dépasse la fin de la texture
     int effectiveWidth = (textureOffset + 960 > skyTextureWidth) ? (skyTextureWidth - textureOffset) : 960;
@@ -231,8 +266,6 @@ void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, SDL_Text
     SDL_Rect fillRect = {0, height/2, width, height/2};
     SDL_RenderFillRect(renderer, &fillRect);
 }
-
-
 
 
 

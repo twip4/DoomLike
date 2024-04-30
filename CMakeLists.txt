@@ -13,4 +13,8 @@ add_executable(DoomLike main.cpp
         src/Player.cpp
         include/Player.h
         include/Map.h
-        include/constante.h)
+        include/constante.h
+        src/Monster.cpp
+        include/Monster.h
+        src/constante.cpp
+)
