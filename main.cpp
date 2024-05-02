@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <iostream>
 #include "include/Player.h"
 #include "include/Monster.h"
@@ -77,15 +78,32 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    SDL_Texture* monsterTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/monster.bmp", renderer);
-    if (!monsterTexture) {
+    SDL_Surface* monsterSurface = IMG_Load("/Users/paulbaudinot/CLionProjects/DoomLike/assets/monster.bmp");
+    if (!monsterSurface) {
         SDL_Log("Failed to load texture: %s", SDL_GetError());
         return -1;
     }
 
+// Set color key for transparency if needed
+    SDL_SetColorKey(monsterSurface, SDL_TRUE, SDL_MapRGB(monsterSurface->format, 0, 0xFF, 0xFF));
+
+// Create texture from surface
+    SDL_Texture* monsterTexture = SDL_CreateTextureFromSurface(renderer, monsterSurface);
+    if (!monsterTexture) {
+        SDL_Log("Failed to create texture from surface: %s", SDL_GetError());
+        SDL_FreeSurface(monsterSurface); // Free the surface before returning
+        return -1;
+    }
+
+// Free the surface after creating the texture
+    SDL_FreeSurface(monsterSurface);
+
+    SDL_SetTextureBlendMode(monsterTexture, SDL_BLENDMODE_BLEND);
+
+
     std::vector<Monster> listMonster;
 
-    Monster monster{350,280,monsterTexture};
+    Monster monster{450,250,monsterTexture};
     listMonster.push_back(monster);
 
     Player player{200,150,&listMonster};
@@ -112,33 +130,33 @@ int main(int argc, char* args[]) {
                         case SDLK_q:
                         case SDLK_LEFT:
                             if (!isCollision(player.posX - sin(player.angle * M_PI / 180) * vitesse,
-                                             player.posY - cos(player.angle * M_PI / 180) * vitesse)) {
+                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX -= sin(player.angle * M_PI / 180) * vitesse;
-                                player.posY -= cos(player.angle * M_PI / 180) * vitesse;
+                                player.posY += cos(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                         case SDLK_d:
                         case SDLK_RIGHT:  // Strafe right
                             if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
-                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
+                                             player.posY - cos(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX += sin(player.angle * M_PI / 180) * vitesse;
-                                player.posY += cos(player.angle * M_PI / 180) * vitesse;
+                                player.posY -= cos(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                         case SDLK_z:
                         case SDLK_UP:  // Move forward
                             if (!isCollision(player.posX + cos(player.angle * M_PI / 180) * vitesse,
-                                             player.posY - sin(player.angle * M_PI / 180) * vitesse)) {
+                                             player.posY + sin(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX += cos(player.angle * M_PI / 180) * vitesse;
-                                player.posY -= sin(player.angle * M_PI / 180) * vitesse;
+                                player.posY += sin(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                         case SDLK_s:
                         case SDLK_DOWN:  // Move backward
                             if (!isCollision(player.posX - cos(player.angle * M_PI / 180) * vitesse,
-                                             player.posY + sin(player.angle * M_PI / 180) * vitesse)) {
+                                             player.posY - sin(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX -= cos(player.angle * M_PI / 180) * vitesse;
-                                player.posY += sin(player.angle * M_PI / 180) * vitesse;
+                                player.posY -= sin(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                     }

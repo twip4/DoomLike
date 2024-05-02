@@ -14,13 +14,16 @@ void Player::line_view(SDL_Renderer* renderer) const {
     DisplayMap(renderer);
     float angleStart = angle + fov / 2;
     float angleEnd = angle - fov / 2;
+
     for (float angleLine = (angleStart); angleLine > (angleEnd); angleLine -= precision_angle) {
+
+
         int d_detect = 0;
         bool hit_wall = false;
 
         while (!hit_wall) {
-            int x_detect = posX + playerWidth / 2 + static_cast<int>(cos(angleLine * M_PI / 180) * d_detect);
-            int y_detect = posY + playerHeight / 2 - static_cast<int>(sin(angleLine * M_PI / 180) * d_detect);
+            int x_detect = (posX + playerWidth / 2) + static_cast<int>(cos(angleLine * M_PI / 180) * d_detect);
+            int y_detect = (posY + playerHeight / 2) + static_cast<int>(sin(angleLine * M_PI / 180) * d_detect);
 
             if (x_detect < 0 || x_detect >= width || y_detect < 0 || y_detect >= height) {
                 hit_wall = true;  // Stop the ray if it goes out of bounds
@@ -66,7 +69,7 @@ void Player::line_view(SDL_Renderer* renderer) const {
 
 void Player::lineCenter(SDL_Renderer* renderer){
     int x_detect = posX + playerWidth/2 +cos(angle*PI/180)*100;
-    int y_detect = posY + playerHeight/2 -sin(angle*PI/180)*100;
+    int y_detect = posY + playerHeight/2 +sin(angle*PI/180)*100;
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Set the color to red for the ray
     SDL_RenderDrawLine(renderer, posX / MiniMap + playerWidth / 2 , posY /MiniMap  + playerHeight / 2 , x_detect / MiniMap, y_detect / MiniMap);
 }
@@ -121,6 +124,7 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
     Point pos = {(double) posX, (double) posY};
     Point zoneStart = {posX + cos(angleStart * M_PI / 180) * width, posY + sin(angleStart * M_PI / 180) * width};
     Point zoneStop = {posX + cos(angleStop * M_PI / 180) * width, posY + sin(angleStop * M_PI / 180) * width};
+
     for (const auto &monster: *listMonster) {
         Point posMonster = {(double) monster.posX, (double) monster.posY};
         int textureWidth, textureHeight;
@@ -132,55 +136,54 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Set the color to red for the ray
         SDL_RenderDrawLine(renderer, posX/ MiniMap, posY/ MiniMap,zoneStop.x/ MiniMap , zoneStop.y/ MiniMap);
 
-        if (true) {
 
-            double angleMonstre = atan2(posY - monster.posY, posX - monster.posX);
+        if (isInsideTriangle(pos,zoneStart,zoneStop,posMonster)) {
 
-            std::cout << angleMonstre / M_PI * 180 << ":" << angle << std::endl;
+            double angleMonstre = atan2( monster.posY - (posY + playerHeight/2), monster.posX - (posX + playerWidth/2));
 
+            // std::cout << angle << ":" << angleMonstre / M_PI * 180 << std::endl;
 
             int d_detect = 0;
             bool hit_wall = false;
             bool hit_monster = false;
 
+            int x_detect;
+            int y_detect;
 
-            while (!hit_wall && !hit_monster) {
+            while (!hit_wall) {
 
-                int x_detect = posX + playerWidth / 2 + static_cast<int>(cos(angleMonstre) * d_detect);
-                int y_detect = posY + playerHeight / 2 - static_cast<int>(sin(angleMonstre) * d_detect);
+                x_detect = posX + playerWidth / 2 + static_cast<int>(cos(angleMonstre) * d_detect);
+                y_detect = posY + playerHeight / 2 + static_cast<int>(sin(angleMonstre) * d_detect);
 
                 if (x_detect < 0 || x_detect >= width || y_detect < 0 || y_detect >= height) {
                     hit_wall = true;  // Stop the ray if it goes out of bounds
                 } else if (map[x_detect / (width / nb_case_w) + y_detect / (height / nb_case_h) * nb_case_w] == 1) {
                     hit_wall = true;
                 }
-
-                float distancePoint = sqrt(pow(x_detect - posX, 2) + pow(y_detect - posY, 2));
-                float distanceMonster = sqrt(pow(monster.posX - posX, 2) + pow(monster.posY - posY, 2));
-                if (distancePoint >= distanceMonster){
-                    hit_monster = true;
-                }
-
                 d_detect++;
             }
 
-            if(hit_monster){
+            float distancePoint = sqrt(pow(x_detect - posX, 2) + pow(y_detect - posY, 2));
+            float distanceMonster = sqrt(pow(monster.posX - posX, 2) + pow(monster.posY - posY, 2));
+
+            // std::cout << distancePoint << ":" << distanceMonster << std::endl;
+
+            if (distancePoint >= distanceMonster){
                 float distance = sqrt(pow(monster.posX - posX, 2) + pow(monster.posY - posY, 2));
-                double rectHeight = 50000 / (cos(angleMonstre - (angle * M_PI / 180)) * distance);
-                if (rectHeight > height) rectHeight = height;
+                double rectHeight = 50000 / (cos(angleMonstre - angleStart * M_PI / 180) * distance);
+                rectHeight = std::min(rectHeight, static_cast<double>(height));
 
-                SDL_Rect srcRect;
-                SDL_Rect destRect;
+                float rationX =  (float)((angleMonstre*180 / M_PI)-angleStart)/(float)(angleStop - angleStart) ;
 
+                SDL_Rect srcRect = {0, 0, textureWidth, textureHeight};
+                SDL_Rect destRect = {static_cast<int>(width*rationX),
+                                     static_cast<int>((height / 2) - (rectHeight / 2)),
+                                     static_cast<int>(textureWidth / (textureHeight / rectHeight)),
+                                     static_cast<int>(rectHeight)};
 
-
-                srcRect = {0, 0, textureWidth, textureHeight};
-                destRect = {(width/360)* ((int)(angleMonstre*180 / M_PI)% 360), static_cast<int>((height/2)-(rectHeight/2)), static_cast<int>(textureWidth * (textureHeight/rectHeight)) , static_cast<int>(rectHeight)};
-
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
-                SDL_RenderFillRect(renderer, &destRect); // Fill the rectangle first to provide a background color
-                SDL_RenderCopy(renderer, monster.texture, &srcRect, &destRect); // Render the texture slice over it
+                SDL_RenderCopy(renderer, monster.texture, &srcRect, &destRect);
             }
+
 
         }
     }
