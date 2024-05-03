@@ -129,18 +129,18 @@ int main(int argc, char* args[]) {
                             running = false;
                         case SDLK_q:
                         case SDLK_LEFT:
-                            if (!isCollision(player.posX - sin(player.angle * M_PI / 180) * vitesse,
-                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
-                                player.posX -= sin(player.angle * M_PI / 180) * vitesse;
-                                player.posY += cos(player.angle * M_PI / 180) * vitesse;
-                            }
-                            break;
-                        case SDLK_d:
-                        case SDLK_RIGHT:  // Strafe right
                             if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
                                              player.posY - cos(player.angle * M_PI / 180) * vitesse)) {
                                 player.posX += sin(player.angle * M_PI / 180) * vitesse;
                                 player.posY -= cos(player.angle * M_PI / 180) * vitesse;
+                            }
+                            break;
+                        case SDLK_d:
+                        case SDLK_RIGHT:  // Strafe right
+                            if (!isCollision(player.posX - sin(player.angle * M_PI / 180) * vitesse,
+                                             player.posY + cos(player.angle * M_PI / 180) * vitesse)) {
+                                player.posX -= sin(player.angle * M_PI / 180) * vitesse;
+                                player.posY += cos(player.angle * M_PI / 180) * vitesse;
                             }
                             break;
                         case SDLK_z:
@@ -162,7 +162,7 @@ int main(int argc, char* args[]) {
                     }
                     break;
                 case SDL_MOUSEMOTION:
-                    player.angle -= event.motion.xrel * sensitivity;
+                    player.angle += event.motion.xrel * sensitivity;
                     player.angle = fmod(player.angle, 360.0);  // Normalize angle to 0-360 degrees
                     if (player.angle < 0) player.angle += 360.0;  // Adjust for negative turns
                     break;
@@ -232,7 +232,7 @@ void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, int angl
     SDL_QueryTexture(skyTexture, NULL, NULL, &skyTextureWidth, &skyTextureHeight);
 
     // Calcul de textureOffset pour le déplacement basé sur l'angle
-    int textureOffset = skyTextureWidth - ((angle * 16) % skyTextureWidth);
+    int textureOffset = skyTextureWidth + ((angle * 16) % skyTextureWidth);
 
     // Gestion du cas où le segment dépasse la fin de la texture
     int effectiveWidth = (textureOffset + 960 > skyTextureWidth) ? (skyTextureWidth - textureOffset) : 960;

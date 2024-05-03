@@ -28,6 +28,7 @@ const int NbRayon = fov/precision_angle;
 
 const int sizeCursor = 10;
 
+const int NbMonsterSplit = 50;
 
 const float sensitivity = 0.1;
 #endif //DOOMLIKE_CONSTANTE_H

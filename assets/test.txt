@@ -1,0 +1,63 @@
+void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* renderer) const {
+    // Assume that posX, posY, playerWidth, and playerHeight are defined and valid.
+    Point playerCenter = {static_cast<double>(posX + playerWidth / 2), static_cast<double>(posY + playerHeight / 2)};
+    for (const auto& monster : *listMonster) {
+        int textureWidth, textureHeight;
+        SDL_QueryTexture(monster.texture, NULL, NULL, &textureWidth, &textureHeight);
+
+        // Calculate the angle to the monster from player's perspective
+        double angleMonster = atan2(monster.posY - playerCenter.y, monster.posX - playerCenter.x) * 180 / M_PI;
+        // Normalize angleMonster to be within [0, 360]
+        if (angleMonster < 0) angleMonster += 360;
+
+        // Only process this monster if it's within the visible arc
+        if (angleMonster >= angleStart && angleMonster <= angleStop) {
+            // Segment the monster texture and display each part
+            for (int i = 0; i < NbMonsterSplit; ++i) {
+                // Calculate texture segments
+                int segmentWidth = textureWidth / NbMonsterSplit;
+                SDL_Rect srcRect = {
+                        i * segmentWidth, 0,
+                        segmentWidth, textureHeight
+                };
+
+                int d_detect = 0;
+                bool hit_wall = false;
+                int x_detect;
+                int y_detect;
+
+                while (!hit_wall) {
+                    x_detect = (posX + playerWidth / 2) + static_cast<int>(cos(angleMonster * M_PI / 180) * d_detect);
+                    y_detect = (posY + playerHeight / 2) + static_cast<int>(sin(angleMonster * M_PI / 180) * d_detect);
+
+                    if (x_detect < 0 || x_detect >= width || y_detect < 0 || y_detect >= height) {
+                        hit_wall = true;  // Stop the ray if it goes out of bounds
+                    } else if (map[x_detect / (width / nb_case_w) + y_detect / (height / nb_case_h) * nb_case_w] == 1) {
+                        hit_wall = true;
+                    }
+                    d_detect++;
+                }
+
+                // Distance and size adjustments for perspective
+                float distanceToMonster = sqrt(pow(monster.posX - playerCenter.x, 2) + pow(monster.posY - playerCenter.y, 2));
+                float distanceToWall = sqrt(pow(x_detect - playerCenter.x, 2) + pow(y_detect - playerCenter.y, 2));
+
+                if (distanceToMonster<distanceToWall){
+                    double rectHeight = 50000 / distanceToMonster;  // Simplified perspective scaling
+                    rectHeight = std::min(rectHeight, static_cast<double>(height));  // Clamp height
+
+                    // Determine where to draw this segment on screen
+                    double segmentScreenX = ((angleMonster - angleStart) / (angleStop - angleStart)) * width;
+                    SDL_Rect destRect = {
+                            static_cast<int>(segmentScreenX + i * (segmentWidth * rectHeight / textureHeight))-10,
+                            static_cast<int>((height / 2) - (rectHeight / 2)),
+                            static_cast<int>(segmentWidth * rectHeight / textureHeight),
+                            static_cast<int>(rectHeight)
+                    };
+
+                    SDL_RenderCopy(renderer, monster.texture, &srcRect, &destRect);
+                }
+            }
+        }
+    }
+}
