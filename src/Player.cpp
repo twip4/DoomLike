@@ -121,65 +121,72 @@ bool isInsideTriangle(const Point& A, const Point& B, const Point& C, const Poin
 
 
 void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* renderer) const {
-    // Assume that posX, posY, playerWidth, and playerHeight are defined and valid.
-    Point playerCenter = {static_cast<double>(posX + playerWidth / 2), static_cast<double>(posY + playerHeight / 2)};
-    for (const auto& monster : *listMonster) {
+    Point pos = {(double) posX, (double) posY};
+    Point zoneStart = {posX + cos(angleStart * M_PI / 180) * width, posY + sin(angleStart * M_PI / 180) * width};
+    Point zoneStop = {posX + cos(angleStop * M_PI / 180) * width, posY + sin(angleStop * M_PI / 180) * width};
+
+    for (const auto &monster: *listMonster) {
+        Point posMonster = {(double) monster.posX, (double) monster.posY};
         int textureWidth, textureHeight;
         SDL_QueryTexture(monster.texture, NULL, NULL, &textureWidth, &textureHeight);
 
-        // Calculate the angle to the monster from player's perspective
-        double angleMonster = atan2(monster.posY - playerCenter.y, monster.posX - playerCenter.x) * 180 / M_PI;
-        // Normalize angleMonster to be within [0, 360]
-        if (angleMonster < 0) angleMonster += 360;
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Set the color to red for the ray
+        SDL_RenderDrawLine(renderer, posX/ MiniMap, posY/ MiniMap,zoneStart.x/ MiniMap, zoneStart.y/ MiniMap);
 
-        // Only process this monster if it's within the visible arc
-        if (angleMonster >= angleStart && angleMonster <= angleStop) {
-            // Segment the monster texture and display each part
-            for (int i = 0; i < NbMonsterSplit; ++i) {
-                // Calculate texture segments
-                int segmentWidth = textureWidth / NbMonsterSplit;
-                SDL_Rect srcRect = {
-                        i * segmentWidth, 0,
-                        segmentWidth, textureHeight
-                };
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Set the color to red for the ray
+        SDL_RenderDrawLine(renderer, posX/ MiniMap, posY/ MiniMap,zoneStop.x/ MiniMap , zoneStop.y/ MiniMap);
 
-                int d_detect = 0;
-                bool hit_wall = false;
-                int x_detect;
-                int y_detect;
 
-                while (!hit_wall) {
-                    x_detect = (posX + playerWidth / 2) + static_cast<int>(cos(angleMonster * M_PI / 180) * d_detect);
-                    y_detect = (posY + playerHeight / 2) + static_cast<int>(sin(angleMonster * M_PI / 180) * d_detect);
+        if (isInsideTriangle(pos,zoneStart,zoneStop,posMonster)) {
 
-                    if (x_detect < 0 || x_detect >= width || y_detect < 0 || y_detect >= height) {
-                        hit_wall = true;  // Stop the ray if it goes out of bounds
-                    } else if (map[x_detect / (width / nb_case_w) + y_detect / (height / nb_case_h) * nb_case_w] == 1) {
-                        hit_wall = true;
-                    }
-                    d_detect++;
+            double angleMonstre = atan2( monster.posY - (posY + playerHeight/2), monster.posX - (posX + playerWidth/2));
+
+            // std::cout << angle << ":" << angleMonstre / M_PI * 180 << std::endl;
+
+            int d_detect = 0;
+            bool hit_wall = false;
+            bool hit_monster = false;
+
+            int x_detect;
+            int y_detect;
+
+            while (!hit_wall) {
+
+                x_detect = posX + playerWidth / 2 + static_cast<int>(cos(angleMonstre) * d_detect);
+                y_detect = posY + playerHeight / 2 + static_cast<int>(sin(angleMonstre) * d_detect);
+
+                if (x_detect < 0 || x_detect >= width || y_detect < 0 || y_detect >= height) {
+                    hit_wall = true;  // Stop the ray if it goes out of bounds
+                } else if (map[x_detect / (width / nb_case_w) + y_detect / (height / nb_case_h) * nb_case_w] == 1) {
+                    hit_wall = true;
                 }
-
-                // Distance and size adjustments for perspective
-                float distanceToMonster = sqrt(pow(monster.posX - playerCenter.x, 2) + pow(monster.posY - playerCenter.y, 2));
-                float distanceToWall = sqrt(pow(x_detect - playerCenter.x, 2) + pow(y_detect - playerCenter.y, 2));
-
-                if (distanceToMonster<distanceToWall){
-                    double rectHeight = 50000 / distanceToMonster;  // Simplified perspective scaling
-                    rectHeight = std::min(rectHeight, static_cast<double>(height));  // Clamp height
-
-                    // Determine where to draw this segment on screen
-                    double segmentScreenX = ((angleMonster - angleStart) / (angleStop - angleStart)) * width;
-                    SDL_Rect destRect = {
-                            static_cast<int>(segmentScreenX + i * (segmentWidth * rectHeight / textureHeight))-10,
-                            static_cast<int>((height / 2) - (rectHeight / 2)),
-                            static_cast<int>(segmentWidth * rectHeight / textureHeight),
-                            static_cast<int>(rectHeight)
-                    };
-
-                    SDL_RenderCopy(renderer, monster.texture, &srcRect, &destRect);
-                }
+                d_detect++;
             }
+
+            float distancePoint = sqrt(pow(x_detect - posX, 2) + pow(y_detect - posY, 2));
+            float distanceMonster = sqrt(pow(monster.posX - posX, 2) + pow(monster.posY - posY, 2));
+
+            // std::cout << distancePoint << ":" << distanceMonster << std::endl;
+
+            if (distancePoint >= distanceMonster){
+                float distance = sqrt(pow(monster.posX - posX, 2) + pow(monster.posY - posY, 2));
+                double rectHeight = 50000 / distance;
+                rectHeight = std::min(rectHeight, static_cast<double>(height));
+                int rectWidth = static_cast<int>(textureWidth / (textureHeight / rectHeight));
+                float rationX =  (float)((angleMonstre*180 / M_PI)-angleStart)/(float)(angleStop - angleStart) ;
+
+                std::cout << width << " : " << rationX << " : " << width*rationX << std::endl;
+
+                SDL_Rect srcRect = {0, 0, textureWidth, textureHeight};
+                SDL_Rect destRect = {static_cast<int>(width*rationX - (rectWidth/2)),
+                                     static_cast<int>((height / 2) - (rectHeight / 2)),
+                                     rectWidth,
+                                     static_cast<int>(rectHeight)};
+
+                SDL_RenderCopy(renderer, monster.texture, &srcRect, &destRect);
+            }
+
+
         }
     }
 }
