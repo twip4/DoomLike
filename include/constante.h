@@ -24,11 +24,12 @@ const int playerHeight = (height / nb_case_h) / rapportPlayerMaps;
 const int vitesse = size_map/rapportPlayerMaps * 5;
 const int fov = 60;
 const float precision_angle = 0.03333333333;
-const int NbRayon = fov/precision_angle;
 
 const int sizeCursor = 10;
 
-const int NbMonsterSplit = 50;
-
 const float sensitivity = 0.1;
+
+const float tolerance = 5;
+const float degas = 50;
+
 #endif //DOOMLIKE_CONSTANTE_H

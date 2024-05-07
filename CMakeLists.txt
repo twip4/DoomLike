@@ -18,4 +18,6 @@ add_executable(DoomLike main.cpp
         src/Monster.cpp
         include/Monster.h
         src/constante.cpp
+        src/Textures.cpp
+        include/Textures.h
 )

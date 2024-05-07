@@ -1,10 +1,12 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <iostream>
+#include <random>
 #include "include/Player.h"
 #include "include/Monster.h"
 #include "include/Map.h"
 #include "include/constante.h"
+#include "include/Textures.h"
 #include <cmath>
 #include "vector"
 
@@ -14,7 +16,8 @@ void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, int angl
 bool isCollision(int x, int y);
 void cursor(SDL_Renderer* renderer);
 SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
-
+void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD);
+int getRandomNumber(int min, int max);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -22,7 +25,6 @@ int main(int argc, char* args[]) {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
         return -1;
     }
-
 
     SDL_DisplayMode dm;
     SDL_GetDesktopDisplayMode(0, &dm); // Obtenez le mode d'affichage du bureau (0 pour le premier écran)
@@ -60,56 +62,24 @@ int main(int argc, char* args[]) {
         return -1;
     }
 
-    SDL_Texture* wallTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/Wall.bmp", renderer);
-    if (!wallTexture) {
-        SDL_Log("Failed to load texture: %s", SDL_GetError());
-        return -1;
-    }
-
-    SDL_Texture* groundTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/ground.bmp", renderer);
-    if (!groundTexture) {
-        SDL_Log("Failed to load texture: %s", SDL_GetError());
-        return -1;
-    }
-
-    SDL_Texture* skyTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/sky.bmp", renderer);
-    if (!skyTexture) {
-        SDL_Log("Failed to load texture: %s", SDL_GetError());
-        return -1;
-    }
-
-    SDL_Surface* monsterSurface = IMG_Load("/Users/paulbaudinot/CLionProjects/DoomLike/assets/monster.bmp");
-    if (!monsterSurface) {
-        SDL_Log("Failed to load texture: %s", SDL_GetError());
-        return -1;
-    }
-
-// Set color key for transparency if needed
-    SDL_SetColorKey(monsterSurface, SDL_TRUE, SDL_MapRGB(monsterSurface->format, 0, 0xFF, 0xFF));
-
-// Create texture from surface
-    SDL_Texture* monsterTexture = SDL_CreateTextureFromSurface(renderer, monsterSurface);
-    if (!monsterTexture) {
-        SDL_Log("Failed to create texture from surface: %s", SDL_GetError());
-        SDL_FreeSurface(monsterSurface); // Free the surface before returning
-        return -1;
-    }
-
-// Free the surface after creating the texture
-    SDL_FreeSurface(monsterSurface);
-
-    SDL_SetTextureBlendMode(monsterTexture, SDL_BLENDMODE_BLEND);
-
+    Textures T = Textures(renderer);
 
     std::vector<Monster> listMonster;
 
-    Monster monster{450,250,monsterTexture};
-    listMonster.push_back(monster);
+    while(listMonster.size() <= 20){
+        int randomX = getRandomNumber(0, width);
+        int randomY = getRandomNumber(0, height);
+        if (!isCollision(randomX,randomY)){
+            Monster monster{randomX,randomY,T.monsterTexture};
+            listMonster.push_back(monster);
+        }
+    }
 
     Player player{200,150,&listMonster};
 
+    bool click = false;
 
-    player.wallTexture = wallTexture;
+    player.wallTexture = T.wallTexture;
 
     int frameCount = 0;
     Uint32 startTime = SDL_GetTicks(), lastTime = startTime;
@@ -166,16 +136,28 @@ int main(int argc, char* args[]) {
                     player.angle = fmod(player.angle, 360.0);  // Normalize angle to 0-360 degrees
                     if (player.angle < 0) player.angle += 360.0;  // Adjust for negative turns
                     break;
+
+                case SDL_MOUSEBUTTONDOWN:
+                    click = true;
             }
         }
 
         SDL_RenderClear(renderer);  // Clear the screen before new drawing
 
         // Drawing functions
-        DisplayBackground(renderer, skyTexture, player.angle);
+        DisplayBackground(renderer, T.skyTexture, player.angle);
         player.line_view(renderer);
         DisplayPerso(player, renderer);
         DisplayMonster(listMonster, renderer);
+        if(click){
+            displayHUD(renderer, T.HUD_FIRETexture);
+            player.shot();
+            SDL_Delay(200);
+            click = false;
+        }
+        else{
+            displayHUD(renderer, T.HUDTexture);
+        }
         cursor(renderer);
 
         SDL_RenderPresent(renderer);
@@ -195,7 +177,7 @@ int main(int argc, char* args[]) {
     }
 
     // Nettoyage
-    SDL_DestroyTexture(wallTexture);
+    SDL_DestroyTexture(T.wallTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -285,8 +267,6 @@ void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, int angl
     SDL_RenderFillRect(renderer, &fillRect);
 }
 
-
-
 bool isCollision(int x, int y) {
     std::array<int, 4> list_indice{
             (x+playerWidth)/(width/nb_case_w) + (y+playerHeight)/(height/nb_case_h)*nb_case_w,
@@ -307,19 +287,31 @@ void cursor(SDL_Renderer* renderer){
     SDL_RenderDrawLine(renderer, width/2, height/2 - sizeCursor, width / 2, height / 2 + sizeCursor);
 }
 
-SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer) {
-    SDL_Surface* bmpSurface = SDL_LoadBMP(filepath);
-    if (!bmpSurface) {
-        SDL_Log("Unable to load BMP file: %s", SDL_GetError());
-        return nullptr;
-    }
+void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD){
+    int HUDTextureWidth, HUDTextureHeight;
+    SDL_QueryTexture(HUD, NULL, NULL, &HUDTextureWidth, &HUDTextureHeight);
 
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, bmpSurface);
-    SDL_FreeSurface(bmpSurface);  // Libérez la surface après la création de la texture
+    SDL_Rect srcRect = {
+            0,
+            0,
+            HUDTextureWidth,
+            HUDTextureHeight
+    };
 
-    if (!texture) {
-        SDL_Log("Unable to create texture from BMP file: %s", SDL_GetError());
-    }
+    SDL_Rect destRect = {
+            0,
+            height - HUDTextureHeight,
+            width,
+            HUDTextureHeight
+    };
 
-    return texture;
+    SDL_RenderCopy(renderer, HUD, &srcRect, &destRect);
+}
+
+int getRandomNumber(int min, int max) {
+    static std::random_device rd;  // Obtain a random number from hardware
+    static std::mt19937 gen(rd()); // Seed the generator
+    std::uniform_int_distribution<> distr(min, max); // Define the range
+
+    return distr(gen); // Generate numbers
 }

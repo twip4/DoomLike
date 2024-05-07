@@ -130,12 +130,6 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
         int textureWidth, textureHeight;
         SDL_QueryTexture(monster.texture, NULL, NULL, &textureWidth, &textureHeight);
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Set the color to red for the ray
-        SDL_RenderDrawLine(renderer, posX/ MiniMap, posY/ MiniMap,zoneStart.x/ MiniMap, zoneStart.y/ MiniMap);
-
-        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Set the color to red for the ray
-        SDL_RenderDrawLine(renderer, posX/ MiniMap, posY/ MiniMap,zoneStop.x/ MiniMap , zoneStop.y/ MiniMap);
-
 
         if (isInsideTriangle(pos,zoneStart,zoneStop,posMonster)) {
 
@@ -145,7 +139,6 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
 
             int d_detect = 0;
             bool hit_wall = false;
-            bool hit_monster = false;
 
             int x_detect;
             int y_detect;
@@ -173,9 +166,11 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
                 double rectHeight = 50000 / distance;
                 rectHeight = std::min(rectHeight, static_cast<double>(height));
                 int rectWidth = static_cast<int>(textureWidth / (textureHeight / rectHeight));
-                float rationX =  (float)((angleMonstre*180 / M_PI)-angleStart)/(float)(angleStop - angleStart) ;
+                float rationX =  (float)((angleMonstre*180 / M_PI)-angleStart)/(float)(fov) ;
 
-                std::cout << width << " : " << rationX << " : " << width*rationX << std::endl;
+                if (rationX < 0){
+                    rationX += 6;
+                }
 
                 SDL_Rect srcRect = {0, 0, textureWidth, textureHeight};
                 SDL_Rect destRect = {static_cast<int>(width*rationX - (rectWidth/2)),
@@ -188,5 +183,34 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
 
 
         }
+    }
+}
+
+
+void Player::shot() {
+    Point pos = {(double) posX, (double) posY};
+    Point zoneStart = {posX + cos((angle - fov / 2) * M_PI / 180) * width,
+                       posY + sin((angle - fov / 2) * M_PI / 180) * width};
+    Point zoneStop = {posX + cos((angle + fov / 2) * M_PI / 180) * width,
+                      posY + sin((angle + fov / 2) * M_PI / 180) * width};
+
+    for (auto it = listMonster->begin(); it != listMonster->end();) {
+        Point posMonster = {(double) it->posX, (double) it->posY};
+
+        if (isInsideTriangle(pos, zoneStart, zoneStop, posMonster)) {
+            float distanceMonster = sqrt(pow(it->posX - posX, 2) + pow(it->posY - posY, 2));
+            float x = posX + playerWidth / 2 + static_cast<int>(cos(angle * M_PI / 180) * distanceMonster);
+            float y = posY + playerHeight / 2 + static_cast<int>(sin(angle * M_PI / 180) * distanceMonster);
+            float distanceShot = sqrt(pow(x - it->posX, 2) + pow(y - it->posY, 2));
+
+            if (distanceShot <= tolerance) {
+                it->pv -= degas;
+                if (it->pv <= 0) {
+                    it = listMonster->erase(it);  // Erase and get the next iterator
+                    continue;  // Skip the increment to prevent skipping the next element
+                }
+            }
+        }
+        ++it;  // Move to the next element if not erased
     }
 }

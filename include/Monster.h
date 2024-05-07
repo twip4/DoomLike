@@ -12,6 +12,7 @@ class Monster {
     public:
     int posX;
     int posY;
+    int pv = 100;
     SDL_Texture* texture;
     Monster(int x, int y, SDL_Texture* texture);
     void Display(SDL_Renderer* renderer, int x, int y) const;
