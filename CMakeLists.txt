@@ -9,6 +9,7 @@ link_directories(/opt/homebrew/lib)
 link_libraries(SDL2)
 link_libraries(SDL2_gfx)
 link_libraries(SDL2_image)
+link_libraries(SDL2_ttf)
 
 add_executable(DoomLike main.cpp
         src/Player.cpp

@@ -11,7 +11,6 @@ void Player::line_view(SDL_Renderer* renderer) const {
     int stepVue = 0;
     int textureWidth, textureHeight;
     SDL_QueryTexture(wallTexture, NULL, NULL, &textureWidth, &textureHeight);
-    DisplayMap(renderer);
     float angleStart = angle - fov / 2;
     float angleEnd = angle + fov / 2;
 
@@ -30,9 +29,8 @@ void Player::line_view(SDL_Renderer* renderer) const {
             } else if (map[x_detect / (width / nb_case_w) + y_detect / (height / nb_case_h) * nb_case_w] == 1) {
                 hit_wall = true;
                 float distance = sqrt(pow(x_detect - posX, 2) + pow(y_detect - posY, 2));
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
-                SDL_RenderDrawLine(renderer, (posX+ playerWidth / 2 )/ MiniMap,  (posY+ playerWidth / 2 ) / MiniMap,
-                                   x_detect / MiniMap, y_detect / MiniMap);
+                // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set the color to red for the ray
+                // SDL_RenderDrawLine(renderer, (posX+ playerWidth / 2 )/ MiniMap,  (posY+ playerWidth / 2 ) / MiniMap, x_detect / MiniMap, y_detect / MiniMap);
                 int wide = 1;
                 double rectHeight = 50000 / (cos((angleLine - angle) * M_PI / 180) * distance);
                 if (rectHeight > height) rectHeight = height;
@@ -65,13 +63,14 @@ void Player::line_view(SDL_Renderer* renderer) const {
         stepVue++;
     }
     DisplayMonster(angleStart,angleEnd, renderer);
+    DisplayMap(renderer);
 }
 
 void Player::lineCenter(SDL_Renderer* renderer){
     int x_detect = posX + playerWidth/2 +cos(angle*PI/180)*100;
     int y_detect = posY + playerHeight/2 +sin(angle*PI/180)*100;
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Set the color to red for the ray
-    SDL_RenderDrawLine(renderer, posX / MiniMap + playerWidth / 2 , posY /MiniMap  + playerHeight / 2 , x_detect / MiniMap, y_detect / MiniMap);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // Set the color to red for the ray
+    SDL_RenderDrawLine(renderer, posX / MiniMap  , posY /MiniMap , x_detect / MiniMap, y_detect / MiniMap);
 }
 
 void DisplayMap(SDL_Renderer* renderer){
@@ -201,11 +200,30 @@ void Player::shot() {
             float distanceMonster = sqrt(pow(it->posX - posX, 2) + pow(it->posY - posY, 2));
             float x = posX + playerWidth / 2 + static_cast<int>(cos(angle * M_PI / 180) * distanceMonster);
             float y = posY + playerHeight / 2 + static_cast<int>(sin(angle * M_PI / 180) * distanceMonster);
+
+            bool hit_wall;
+            int d_detect = 1;
+            int x_detect;
+            int y_detect;
+
+            while (!hit_wall or d_detect == distanceMonster) {
+                x_detect = posX + playerWidth / 2 + static_cast<int>(cos(angle) * d_detect);
+                y_detect = posY + playerHeight / 2 + static_cast<int>(sin(angle) * d_detect);
+
+                if (x_detect < 0 || x_detect >= width || y_detect < 0 || y_detect >= height) {
+                    hit_wall = true;  // Stop the ray if it goes out of bounds
+                } else if (map[x_detect / (width / nb_case_w) + y_detect / (height / nb_case_h) * nb_case_w] == 1) {
+                    hit_wall = true;
+                }
+                d_detect++;
+            }
+
             float distanceShot = sqrt(pow(x - it->posX, 2) + pow(y - it->posY, 2));
 
             if (distanceShot <= tolerance) {
                 it->pv -= degas;
                 if (it->pv <= 0) {
+                    score = score + 100;
                     it = listMonster->erase(it);  // Erase and get the next iterator
                     continue;  // Skip the increment to prevent skipping the next element
                 }

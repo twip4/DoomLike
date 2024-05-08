@@ -9,6 +9,8 @@
 extern int width;
 extern int height;
 
+extern int score;
+
 const int size_map = 30;
 const int rapportPlayerMaps = 8;
 const int MiniMap = 5;
@@ -21,7 +23,7 @@ const int nb_case_h = 30;
 const int playerWidth = (width / nb_case_w) / rapportPlayerMaps;
 const int playerHeight = (height / nb_case_h) / rapportPlayerMaps;
 
-const int vitesse = size_map/rapportPlayerMaps * 5;
+const int vitesse = size_map/rapportPlayerMaps * 4;
 const int fov = 60;
 const float precision_angle = 0.03333333333;
 

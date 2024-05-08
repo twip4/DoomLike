@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <random>
 #include "include/Player.h"
@@ -18,12 +19,26 @@ void cursor(SDL_Renderer* renderer);
 SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
 void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD);
 int getRandomNumber(int min, int max);
+void DisplayScore(SDL_Renderer* renderer, TTF_Font* font);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
         return -1;
+    }
+
+    if (TTF_Init() == -1) {
+        std::cerr << "SDL_ttf could not initialize! TTF_Error: " << TTF_GetError() << std::endl;
+        return -1;
+    }
+
+    TTF_Font* font = TTF_OpenFont("/Users/paulbaudinot/CLionProjects/DoomLike/assets/Minecraft.ttf", 24);
+    if (font == nullptr) {
+        std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
     }
 
     SDL_DisplayMode dm;
@@ -66,7 +81,7 @@ int main(int argc, char* args[]) {
 
     std::vector<Monster> listMonster;
 
-    while(listMonster.size() <= 20){
+    while(listMonster.size() <= 10){
         int randomX = getRandomNumber(0, width);
         int randomY = getRandomNumber(0, height);
         if (!isCollision(randomX,randomY)){
@@ -144,11 +159,12 @@ int main(int argc, char* args[]) {
 
         SDL_RenderClear(renderer);  // Clear the screen before new drawing
 
-        // Drawing functions
         DisplayBackground(renderer, T.skyTexture, player.angle);
         player.line_view(renderer);
+        player.lineCenter(renderer);
         DisplayPerso(player, renderer);
         DisplayMonster(listMonster, renderer);
+        DisplayScore(renderer,font);
         if(click){
             displayHUD(renderer, T.HUD_FIRETexture);
             player.shot();
@@ -158,7 +174,10 @@ int main(int argc, char* args[]) {
         else{
             displayHUD(renderer, T.HUDTexture);
         }
+
         cursor(renderer);
+
+        std::cout << score << std::endl;
 
         SDL_RenderPresent(renderer);
 
@@ -177,6 +196,8 @@ int main(int argc, char* args[]) {
     }
 
     // Nettoyage
+    TTF_CloseFont(font);
+    TTF_Quit();
     SDL_DestroyTexture(T.wallTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -192,7 +213,7 @@ void DisplayPerso(Player &player, SDL_Renderer* renderer){
     rect.w = width/size_map/rapportPlayerMaps;
     rect.h = height/size_map/rapportPlayerMaps;
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
     SDL_RenderFillRect(renderer, &rect);
 }
 
@@ -204,7 +225,7 @@ void DisplayMonster(const std::vector<Monster>& listMonster, SDL_Renderer* rende
         rect.w = width/size_map/rapportPlayerMaps;
         rect.h = height/size_map/rapportPlayerMaps;
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillRect(renderer, &rect);
     }
 }
@@ -314,4 +335,41 @@ int getRandomNumber(int min, int max) {
     std::uniform_int_distribution<> distr(min, max); // Define the range
 
     return distr(gen); // Generate numbers
+}
+
+void DisplayScore(SDL_Renderer* renderer, TTF_Font* font) {
+    // Convert score to string
+    std::string scoreText = std::to_string(score);
+
+    // Color for the text
+    SDL_Color textColor = {255, 255, 255}; // White
+
+    // Render the text to an SDL_Surface
+    SDL_Surface* textSurface = TTF_RenderText_Solid(font, scoreText.c_str(), textColor);
+    if (textSurface == nullptr) {
+        SDL_Log("Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError());
+        return;
+    }
+
+    // Create texture from surface
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    if (textTexture == nullptr) {
+        SDL_Log("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
+        SDL_FreeSurface(textSurface); // Free the surface immediately after use
+        return;
+    }
+
+    // Get the texture width and height
+    int textureWidth, textureHeight;
+    SDL_QueryTexture(textTexture, NULL, NULL, &textureWidth, &textureHeight);
+
+    // Define the position and dimensions for the texture on the renderer
+    SDL_Rect renderQuad = {width - textureWidth, 0, textureWidth, textureHeight}; // Assuming 640 as window width
+
+    // Render the texture to the renderer
+    SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
+
+    // Clean up
+    SDL_DestroyTexture(textTexture);
+    SDL_FreeSurface(textSurface);
 }
