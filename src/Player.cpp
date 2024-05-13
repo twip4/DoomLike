@@ -7,7 +7,7 @@
 void DisplayMap(SDL_Renderer* renderer);
 Player::Player(int x, int y,std::vector<Monster>* listMonster) : posX(x), posY(y), listMonster(listMonster){}
 
-void Player::line_view(SDL_Renderer* renderer) const {
+void Player::view(SDL_Renderer* renderer) const {
     int stepVue = 0;
     int textureWidth, textureHeight;
     SDL_QueryTexture(wallTexture, NULL, NULL, &textureWidth, &textureHeight);
@@ -44,12 +44,12 @@ void Player::line_view(SDL_Renderer* renderer) const {
                     (map[(x_detect)/(width/nb_case_w) + (y_detect+1) /(height/nb_case_h)*nb_case_w]==1 &&
                      map[(x_detect)/(width/nb_case_w) + (y_detect-1) /(height/nb_case_h)*nb_case_w]==1)) {
 
-                    SDL_SetTextureColorMod(wallTexture, 168, 168, 168);
+                    SDL_SetTextureColorMod(wallTexture, 255, 255, 255);
                     int textureOffset = y_detect % textureWidth;
                     srcRect = {textureOffset, 0, wide, textureHeight};  // Taking a 1-pixel wide slice
                     destRect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
                 } else {
-                    SDL_SetTextureColorMod(wallTexture, 128, 128, 128);
+                    SDL_SetTextureColorMod(wallTexture, 200, 200, 200);
                     int textureOffset = x_detect % textureWidth;
                     srcRect = {textureOffset, 0, wide, textureHeight};  // Taking a 1-pixel wide slice
                     destRect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
@@ -176,6 +176,8 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
                                      static_cast<int>((height / 2) - (rectHeight / 2)),
                                      rectWidth,
                                      static_cast<int>(rectHeight)};
+
+                SDL_SetTextureColorMod(monster.texture, 150, 150, 150);
 
                 SDL_RenderCopy(renderer, monster.texture, &srcRect, &destRect);
             }

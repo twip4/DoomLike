@@ -26,7 +26,7 @@ public:
     SDL_Texture* wallTexture;
     std::vector<Monster>* listMonster;
     Player(int x, int y,std::vector<Monster>* listMonster);
-    void line_view(SDL_Renderer* renderer) const;
+    void view(SDL_Renderer* renderer) const;
     void lineCenter(SDL_Renderer* renderer);
     void shot();
 };

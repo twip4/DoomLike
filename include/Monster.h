@@ -7,6 +7,12 @@
 
 #include <SDL2/SDL.h>
 #include "constante.h"
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <map>
+#include <cmath>
+#include "Map.h"
 
 class Monster {
     public:
@@ -15,7 +21,7 @@ class Monster {
     int pv = 100;
     SDL_Texture* texture;
     Monster(int x, int y, SDL_Texture* texture);
-    void Display(SDL_Renderer* renderer, int x, int y) const;
+    void move(int targetX, int targetY);
 };
 
 

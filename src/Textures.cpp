@@ -5,9 +5,10 @@
 #include "../include/Textures.h"
 
 SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
+SDL_Texture* loadBMPTexureTransparant(const char* filepath, SDL_Renderer* renderer);
 
 Textures::Textures(SDL_Renderer *renderer) {
-    wallTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/Wall.bmp", renderer);
+    wallTexture = loadBMPTexure("/Users/paulbaudinot/CLionProjects/DoomLike/assets/Wall1.bmp", renderer);
     if (!wallTexture) {
         SDL_Log("Failed to load texture: %s", SDL_GetError());
     }
@@ -22,68 +23,15 @@ Textures::Textures(SDL_Renderer *renderer) {
         SDL_Log("Failed to load texture: %s", SDL_GetError());
     }
 
-    SDL_Surface* monsterSurface = IMG_Load("/Users/paulbaudinot/CLionProjects/DoomLike/assets/monster.bmp");
-    if (!monsterSurface) {
-        SDL_Log("Failed to load texture: %s", SDL_GetError());
-    }
+    monsterTexture = loadBMPTexureTransparant("/Users/paulbaudinot/CLionProjects/DoomLike/assets/monster.bmp",renderer);
 
-// Set color key for transparency if needed
-    SDL_SetColorKey(monsterSurface, SDL_TRUE, SDL_MapRGB(monsterSurface->format, 0, 0xFF, 0xFF));
+    HUDTexture = loadBMPTexureTransparant("/Users/paulbaudinot/CLionProjects/DoomLike/assets/HUD.bmp",renderer);
 
-// Create texture from surface
-    monsterTexture = SDL_CreateTextureFromSurface(renderer, monsterSurface);
-    if (!monsterTexture) {
-        SDL_Log("Failed to create texture from surface: %s", SDL_GetError());
-        SDL_FreeSurface(monsterSurface); // Free the surface before returning
-    }
+    HUDSHOT1Texture = loadBMPTexureTransparant("/Users/paulbaudinot/CLionProjects/DoomLike/assets/HUD_SHOT1.bmp",renderer);
 
-// Free the surface after creating the texture
-    SDL_FreeSurface(monsterSurface);
+    HUDSHOT2Texture = loadBMPTexureTransparant("/Users/paulbaudinot/CLionProjects/DoomLike/assets/HUD_SHOT2.bmp",renderer);
 
-    SDL_SetTextureBlendMode(monsterTexture, SDL_BLENDMODE_BLEND);
-
-
-    SDL_Surface* HUDSurface = IMG_Load("/Users/paulbaudinot/CLionProjects/DoomLike/assets/HUD_FPS.bmp");
-    if (!HUDSurface) {
-        SDL_Log("Failed to load texture: %s", SDL_GetError());
-    }
-
-// Set color key for transparency if needed
-    SDL_SetColorKey(HUDSurface, SDL_TRUE, SDL_MapRGB(HUDSurface->format, 0, 0xFF, 0xFF));
-
-// Create texture from surface
-    HUDTexture = SDL_CreateTextureFromSurface(renderer, HUDSurface);
-    if (!HUDTexture) {
-        SDL_Log("Failed to create texture from surface: %s", SDL_GetError());
-        SDL_FreeSurface(HUDSurface); // Free the surface before returning
-    }
-
-// Free the surface after creating the texture
-    SDL_FreeSurface(HUDSurface);
-
-    SDL_SetTextureBlendMode(HUDTexture, SDL_BLENDMODE_BLEND);
-
-
-    SDL_Surface* HUD_FIRESurface = IMG_Load("/Users/paulbaudinot/CLionProjects/DoomLike/assets/HUD_FPS_FIRE.bmp");
-    if (!HUD_FIRESurface) {
-        SDL_Log("Failed to load texture: %s", SDL_GetError());
-    }
-
-// Set color key for transparency if needed
-    SDL_SetColorKey(HUD_FIRESurface, SDL_TRUE, SDL_MapRGB(HUD_FIRESurface->format, 0, 0xFF, 0xFF));
-
-// Create texture from surface
-    HUD_FIRETexture = SDL_CreateTextureFromSurface(renderer, HUD_FIRESurface);
-    if (!HUD_FIRETexture) {
-        SDL_Log("Failed to create texture from surface: %s", SDL_GetError());
-        SDL_FreeSurface(HUD_FIRESurface); // Free the surface before returning
-    }
-
-// Free the surface after creating the texture
-    SDL_FreeSurface(HUD_FIRESurface);
-
-    SDL_SetTextureBlendMode(HUD_FIRETexture, SDL_BLENDMODE_BLEND);
-
+    HUDSHOT3Texture = loadBMPTexureTransparant("/Users/paulbaudinot/CLionProjects/DoomLike/assets/HUD_SHOT3.bmp",renderer);
 }
 
 SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer) {
@@ -102,3 +50,27 @@ SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer) {
 
     return texture;
 }
+
+SDL_Texture* loadBMPTexureTransparant(const char* filepath, SDL_Renderer* renderer){
+    SDL_Surface* Surface = IMG_Load(filepath);
+    if (!Surface) {
+        SDL_Log("Failed to load texture: %s", SDL_GetError());
+    }
+
+// Set color key for transparency if needed
+    SDL_SetColorKey(Surface, SDL_TRUE, SDL_MapRGB(Surface->format, 0, 0xFF, 0xFF));
+
+// Create texture from surface
+    SDL_Texture* Texture = SDL_CreateTextureFromSurface(renderer, Surface);
+    if (!Texture) {
+        SDL_Log("Failed to create texture from surface: %s", SDL_GetError());
+        SDL_FreeSurface(Surface); // Free the surface before returning
+    }
+
+// Free the surface after creating the texture
+    SDL_FreeSurface(Surface);
+
+    SDL_SetTextureBlendMode(Texture, SDL_BLENDMODE_BLEND);
+
+    return Texture;
+};

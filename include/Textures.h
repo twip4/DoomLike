@@ -16,7 +16,9 @@ public:
     SDL_Texture* skyTexture;
     SDL_Texture* monsterTexture;
     SDL_Texture* HUDTexture;
-    SDL_Texture* HUD_FIRETexture;
+    SDL_Texture* HUDSHOT1Texture;
+    SDL_Texture* HUDSHOT2Texture;
+    SDL_Texture* HUDSHOT3Texture;
 };
 
 #endif //DOOMLIKE_TEXTURES_H

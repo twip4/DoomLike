@@ -34,4 +34,5 @@ const float sensitivity = 0.1;
 const float tolerance = 5;
 const float degas = 50;
 
+const int delay = 70;
 #endif //DOOMLIKE_CONSTANTE_H

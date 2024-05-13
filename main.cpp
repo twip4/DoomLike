@@ -1,5 +1,4 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <random>
@@ -10,6 +9,8 @@
 #include "include/Textures.h"
 #include <cmath>
 #include "vector"
+#include <thread>
+#include <chrono>
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
 void DisplayMonster(const std::vector<Monster>& listMonster, SDL_Renderer* renderer);
@@ -20,6 +21,9 @@ SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
 void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD);
 int getRandomNumber(int min, int max);
 void DisplayScore(SDL_Renderer* renderer, TTF_Font* font);
+void DisplayWin(SDL_Renderer* renderer, TTF_Font* font);
+void updateMonsters(Monster monster, const Player& player);
+void AnnimShot(SDL_Renderer* renderer, Textures T, auto now) ;
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -79,20 +83,27 @@ int main(int argc, char* args[]) {
 
     Textures T = Textures(renderer);
 
-    std::vector<Monster> listMonster;
 
-    while(listMonster.size() <= 10){
-        int randomX = getRandomNumber(0, width);
-        int randomY = getRandomNumber(0, height);
-        if (!isCollision(randomX,randomY)){
-            Monster monster{randomX,randomY,T.monsterTexture};
-            listMonster.push_back(monster);
-        }
-    }
+    std::vector<Monster> listMonster;
 
     Player player{200,150,&listMonster};
 
+    while(listMonster.size() <= 0){
+        int randomX = getRandomNumber(0, width-10);
+        int randomY = getRandomNumber(0, height-10);
+        if (!isCollision(randomX,randomY)){
+            Monster monster{randomX,randomY,T.monsterTexture};
+            listMonster.push_back(monster);
+            std::thread MonsterMove{updateMonsters, monster, player};
+            MonsterMove.detach();
+        }
+    }
+
+
+
     bool click = false;
+    bool annimationBoucle = false;
+    auto now = std::chrono::steady_clock::now();;
 
     player.wallTexture = T.wallTexture;
 
@@ -102,7 +113,6 @@ int main(int argc, char* args[]) {
     SDL_Event event;
     bool running = true;
     while (running) {
-
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT:
@@ -160,24 +170,34 @@ int main(int argc, char* args[]) {
         SDL_RenderClear(renderer);  // Clear the screen before new drawing
 
         DisplayBackground(renderer, T.skyTexture, player.angle);
-        player.line_view(renderer);
+        player.view(renderer);
         player.lineCenter(renderer);
         DisplayPerso(player, renderer);
+
         DisplayMonster(listMonster, renderer);
         DisplayScore(renderer,font);
+
         if(click){
-            displayHUD(renderer, T.HUD_FIRETexture);
             player.shot();
-            SDL_Delay(200);
+
+            now = std::chrono::steady_clock::now();
+            annimationBoucle = true;
             click = false;
+        }
+
+        if(annimationBoucle){
+            AnnimShot(renderer,T,now);
+            auto end_time = std::chrono::steady_clock::now();
+            auto duration = end_time - now;
+            if (duration > std::chrono::milliseconds(delay*4)){
+                annimationBoucle = false;
+            }
         }
         else{
             displayHUD(renderer, T.HUDTexture);
         }
 
         cursor(renderer);
-
-        std::cout << score << std::endl;
 
         SDL_RenderPresent(renderer);
 
@@ -193,7 +213,17 @@ int main(int argc, char* args[]) {
             frameCount = 0;
             lastTime = currentTime;
         }
+
+        if (listMonster.empty()){
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+            DisplayWin(renderer,font);
+            SDL_RenderPresent(renderer);
+            SDL_Delay(5000);
+            running = false;
+        }
     }
+
 
     // Nettoyage
     TTF_CloseFont(font);
@@ -205,6 +235,25 @@ int main(int argc, char* args[]) {
 
     return 0;
 }
+
+void AnnimShot(SDL_Renderer* renderer, Textures T, auto now) {
+    auto end_time = std::chrono::steady_clock::now();
+    auto duration = end_time - now;
+
+    if (duration < std::chrono::milliseconds(delay)) {
+        displayHUD(renderer, T.HUDSHOT1Texture);
+    }
+    if (duration < std::chrono::milliseconds(delay*2) && duration > std::chrono::milliseconds(delay)) {
+        displayHUD(renderer, T.HUDSHOT2Texture);
+    }
+    if (duration < std::chrono::milliseconds(delay*3) && duration > std::chrono::milliseconds(delay*2)) {
+        displayHUD(renderer, T.HUDSHOT3Texture);
+    }
+    if (duration < std::chrono::milliseconds(delay*4) && duration > std::chrono::milliseconds(delay*3)) {
+        displayHUD(renderer, T.HUDSHOT2Texture);
+    }
+}
+
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_Rect rect;
@@ -320,9 +369,9 @@ void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD){
     };
 
     SDL_Rect destRect = {
-            0,
+            width/2 ,
             height - HUDTextureHeight,
-            width,
+            width/2,
             HUDTextureHeight
     };
 
@@ -338,10 +387,9 @@ int getRandomNumber(int min, int max) {
 }
 
 void DisplayScore(SDL_Renderer* renderer, TTF_Font* font) {
-    // Convert score to string
-    std::string scoreText = std::to_string(score);
+    std::string scoreText = "Score : ";
+    scoreText += std::to_string(score);
 
-    // Color for the text
     SDL_Color textColor = {255, 255, 255}; // White
 
     // Render the text to an SDL_Surface
@@ -372,4 +420,68 @@ void DisplayScore(SDL_Renderer* renderer, TTF_Font* font) {
     // Clean up
     SDL_DestroyTexture(textTexture);
     SDL_FreeSurface(textSurface);
+}
+
+void DisplayWin(SDL_Renderer* renderer, TTF_Font* font){
+    SDL_Color textColor = {255, 215, 0};
+
+    // Render the text to an SDL_Surface
+    SDL_Surface* textSurface = TTF_RenderText_Solid(font, "YOU WIN !!!", textColor);
+    if (textSurface == nullptr) {
+        SDL_Log("Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError());
+        return;
+    }
+
+    // Create texture from surface
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    if (textTexture == nullptr) {
+        SDL_Log("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
+        SDL_FreeSurface(textSurface); // Free the surface immediately after use
+        return;
+    }
+
+    // Get the texture width and height
+    int textureWidth, textureHeight;
+    SDL_QueryTexture(textTexture, NULL, NULL, &textureWidth, &textureHeight);
+
+    // Define the position and dimensions for the texture on the renderer
+    SDL_Rect renderQuad = {(width - textureWidth)/2, (height - textureHeight)/2, textureWidth, textureHeight}; // Assuming 640 as window width
+
+    // Render the texture to the renderer
+    SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
+
+    // Clean up
+    SDL_DestroyTexture(textTexture);
+    SDL_FreeSurface(textSurface);
+}
+
+void updateMonsters(Monster monster, const Player& player) {
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        int stepX;
+        int stepY;
+
+        if (player.posX > monster.posX) {
+            stepX = 1;
+        } else {
+            stepX = -1;
+        }
+        if (player.posY > monster.posY) {
+            stepY = 1;
+        } else {
+            stepY = -1;
+        }
+
+        // Calculate new potential positions
+        int newX = monster.posX + stepX;
+        int newY = monster.posY + stepY;
+
+        std::cout << newX << ":" << newY << std::endl;
+
+        // Move the monster if no collision
+        if (!isCollision(newX, newY)) {
+            monster.move(stepX, stepY);
+        }
+    }
 }
