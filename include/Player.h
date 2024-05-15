@@ -24,8 +24,8 @@ public:
     int angle = 0;
     int pv = 100;
     SDL_Texture* wallTexture;
-    std::vector<Monster>* listMonster;
-    Player(int x, int y,std::vector<Monster>* listMonster);
+    std::vector<Monster*>* listMonster;
+    Player(int x, int y,std::vector<Monster*>* listMonster);
     void view(SDL_Renderer* renderer) const;
     void lineCenter(SDL_Renderer* renderer);
     void shot();

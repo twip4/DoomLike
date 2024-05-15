@@ -5,7 +5,7 @@
 #include "../include/Player.h"
 
 void DisplayMap(SDL_Renderer* renderer);
-Player::Player(int x, int y,std::vector<Monster>* listMonster) : posX(x), posY(y), listMonster(listMonster){}
+Player::Player(int x, int y,std::vector<Monster*>* listMonster) : posX(x), posY(y), listMonster(listMonster){}
 
 void Player::view(SDL_Renderer* renderer) const {
     int stepVue = 0;
@@ -125,14 +125,14 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
     Point zoneStop = {posX + cos(angleStop * M_PI / 180) * width, posY + sin(angleStop * M_PI / 180) * width};
 
     for (const auto &monster: *listMonster) {
-        Point posMonster = {(double) monster.posX, (double) monster.posY};
+        Point posMonster = {(double) monster->posX, (double) monster->posY};
         int textureWidth, textureHeight;
-        SDL_QueryTexture(monster.texture, NULL, NULL, &textureWidth, &textureHeight);
+        SDL_QueryTexture(monster->texture, NULL, NULL, &textureWidth, &textureHeight);
 
 
         if (isInsideTriangle(pos,zoneStart,zoneStop,posMonster)) {
 
-            double angleMonstre = atan2( monster.posY - (posY + playerHeight/2), monster.posX - (posX + playerWidth/2));
+            double angleMonstre = atan2( monster->posY - (posY + playerHeight/2), monster->posX - (posX + playerWidth/2));
 
             // std::cout << angle << ":" << angleMonstre / M_PI * 180 << std::endl;
 
@@ -156,12 +156,12 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
             }
 
             float distancePoint = sqrt(pow(x_detect - posX, 2) + pow(y_detect - posY, 2));
-            float distanceMonster = sqrt(pow(monster.posX - posX, 2) + pow(monster.posY - posY, 2));
+            float distanceMonster = sqrt(pow(monster->posX - posX, 2) + pow(monster->posY - posY, 2));
 
             // std::cout << distancePoint << ":" << distanceMonster << std::endl;
 
             if (distancePoint >= distanceMonster){
-                float distance = sqrt(pow(monster.posX - posX, 2) + pow(monster.posY - posY, 2));
+                float distance = sqrt(pow(monster->posX - posX, 2) + pow(monster->posY - posY, 2));
                 double rectHeight = 50000 / distance;
                 rectHeight = std::min(rectHeight, static_cast<double>(height));
                 int rectWidth = static_cast<int>(textureWidth / (textureHeight / rectHeight));
@@ -177,9 +177,9 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
                                      rectWidth,
                                      static_cast<int>(rectHeight)};
 
-                SDL_SetTextureColorMod(monster.texture, 150, 150, 150);
+                SDL_SetTextureColorMod(monster->texture, 150, 150, 150);
 
-                SDL_RenderCopy(renderer, monster.texture, &srcRect, &destRect);
+                SDL_RenderCopy(renderer, monster->texture, &srcRect, &destRect);
             }
 
 
@@ -196,19 +196,20 @@ void Player::shot() {
                       posY + sin((angle + fov / 2) * M_PI / 180) * width};
 
     for (auto it = listMonster->begin(); it != listMonster->end();) {
-        Point posMonster = {(double) it->posX, (double) it->posY};
+        Monster* monster = *it;
+        Point posMonster = {static_cast<double>(monster->posX), static_cast<double>(monster->posY)};
 
         if (isInsideTriangle(pos, zoneStart, zoneStop, posMonster)) {
-            float distanceMonster = sqrt(pow(it->posX - posX, 2) + pow(it->posY - posY, 2));
+            float distanceMonster = sqrt(pow(monster->posX - posX, 2) + pow(monster->posY - posY, 2));
             float x = posX + playerWidth / 2 + static_cast<int>(cos(angle * M_PI / 180) * distanceMonster);
             float y = posY + playerHeight / 2 + static_cast<int>(sin(angle * M_PI / 180) * distanceMonster);
 
-            bool hit_wall;
+            bool hit_wall = false;
             int d_detect = 1;
             int x_detect;
             int y_detect;
 
-            while (!hit_wall or d_detect == distanceMonster) {
+            while (!hit_wall && d_detect <= distanceMonster) {
                 x_detect = posX + playerWidth / 2 + static_cast<int>(cos(angle) * d_detect);
                 y_detect = posY + playerHeight / 2 + static_cast<int>(sin(angle) * d_detect);
 
@@ -220,12 +221,12 @@ void Player::shot() {
                 d_detect++;
             }
 
-            float distanceShot = sqrt(pow(x - it->posX, 2) + pow(y - it->posY, 2));
+            float distanceShot = sqrt(pow(x - monster->posX, 2) + pow(y - monster->posY, 2));
 
             if (distanceShot <= tolerance) {
-                it->pv -= degas;
-                if (it->pv <= 0) {
-                    score = score + 100;
+                monster->pv -= degas;
+                if (monster->pv <= 0) {
+                    score += 100;
                     it = listMonster->erase(it);  // Erase and get the next iterator
                     continue;  // Skip the increment to prevent skipping the next element
                 }
