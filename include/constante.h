@@ -36,6 +36,6 @@ const float degas = 50;
 
 const int delay = 70;
 
-const int nbMonsters = 20;
+const int nbMonsters[] = {10, 20, 40, 0};
 
 #endif //DOOMLIKE_CONSTANTE_H

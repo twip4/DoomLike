@@ -10,7 +10,6 @@
 #include <cmath>
 #include "vector"
 #include <thread>
-#include <chrono>
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer);
 void DisplayMonster(const std::vector<Monster*>& listMonster, SDL_Renderer* renderer);
@@ -21,11 +20,11 @@ SDL_Texture* loadBMPTexure(const char* filepath, SDL_Renderer* renderer);
 void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD);
 int getRandomNumber(int min, int max);
 void DisplayScore(SDL_Renderer* renderer, TTF_Font* font);
-void DisplayWin(SDL_Renderer* renderer, TTF_Font* font);
+void DisplayText(SDL_Renderer* renderer, TTF_Font* font, const char *text, SDL_Color textColor);
 void updateMonsters(Monster* monster,Player* player);
 void AnnimShot(SDL_Renderer* renderer, Textures T, auto now, bool* annimationBoucle) ;
-void DisplayLose(SDL_Renderer* renderer, TTF_Font* font);
 void DisplayPv(SDL_Renderer* renderer, TTF_Font* font, Player player);
+int ModeSolo(SDL_Renderer* renderer, TTF_Font* font, Textures T);
 
 int main(int argc, char* args[]) {
     // Initialisation de SDL
@@ -85,12 +84,27 @@ int main(int argc, char* args[]) {
 
     Textures T = Textures(renderer);
 
+    ModeSolo(renderer,font,T);
+
+    // Nettoyage
+    TTF_CloseFont(font);
+    TTF_Quit();
+    SDL_DestroyTexture(T.wallTexture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
+
+
+int ModeSolo(SDL_Renderer* renderer, TTF_Font* font, Textures T){
 
     std::vector<Monster*> listMonster;
 
     Player player{200,150,&listMonster};
 
-    while(listMonster.size() <= nbMonsters){
+    int round = 3;
+
+    while(listMonster.size() <= nbMonsters[round]){
         int randomX = getRandomNumber(0, width-50);
         int randomY = getRandomNumber(0, height-50);
         if (!isCollision(randomX, randomY)) {
@@ -166,7 +180,6 @@ int main(int argc, char* args[]) {
                     click = true;
             }
         }
-
         SDL_RenderClear(renderer);  // Clear the screen before new drawing
 
         DisplayBackground(renderer, T.skyTexture, player.angle);
@@ -193,49 +206,48 @@ int main(int argc, char* args[]) {
         }
 
         cursor(renderer);
-
         SDL_RenderPresent(renderer);
 
-        frameCount++;
-
-        // Calculate and display FPS every second
-        Uint32 currentTime = SDL_GetTicks();
-        Uint32 elapsedMS = currentTime - lastTime;
-
-        if (elapsedMS >= 1000) {
-            float fps = frameCount / (elapsedMS / 1000.0f);
-            // std::cout << "FPS: " << fps << std::endl;
-            frameCount = 0;
-            lastTime = currentTime;
-        }
-
         if (listMonster.empty()){
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
-            DisplayWin(renderer,font);
-            SDL_RenderPresent(renderer);
-            SDL_Delay(5000);
-            running = false;
+            if(round != 4){
+                round += 1;
+
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_RenderClear(renderer);
+                DisplayText(renderer,font,"NEXT ROUND ", {255, 215, 0});
+                SDL_RenderPresent(renderer);
+                SDL_Delay(1000);
+
+                while(listMonster.size() <= nbMonsters[round]){
+                    int randomX = getRandomNumber(0, width-50);
+                    int randomY = getRandomNumber(0, height-50);
+                    if (!isCollision(randomX, randomY)) {
+                        Monster* monster = new Monster{randomX, randomY, T.monsterTexture}; // Allocation dynamique
+                        listMonster.push_back(monster);
+                        std::thread MonsterMove{&updateMonsters, monster, &player};
+                        MonsterMove.detach();
+                    }
+                }
+            }
+            else{
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_RenderClear(renderer);
+                DisplayText(renderer,font,"YOU WIN !!!", {255, 215, 0});
+                SDL_RenderPresent(renderer);
+                SDL_Delay(5000);
+                running = false;
+            }
         }
 
         if(player.pv <= 0){
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
-            DisplayLose(renderer,font);
+            DisplayText(renderer,font,"YOU ARE DEAD", {227, 20, 20});
             SDL_RenderPresent(renderer);
             SDL_Delay(5000);
             running = false;
         }
     }
-
-    // Nettoyage
-    TTF_CloseFont(font);
-    TTF_Quit();
-    SDL_DestroyTexture(T.wallTexture);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
     return 0;
 }
 
@@ -459,43 +471,9 @@ void DisplayPv(SDL_Renderer* renderer, TTF_Font* font, Player player) {
     SDL_FreeSurface(textSurface);
 }
 
-void DisplayWin(SDL_Renderer* renderer, TTF_Font* font){
-    SDL_Color textColor = {255, 215, 0};
-
+void DisplayText(SDL_Renderer* renderer, TTF_Font* font, const char *text, SDL_Color textColor){
     // Render the text to an SDL_Surface
-    SDL_Surface* textSurface = TTF_RenderText_Solid(font, "YOU ARE LOSE", textColor);
-    if (textSurface == nullptr) {
-        SDL_Log("Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError());
-        return;
-    }
-
-    // Create texture from surface
-    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (textTexture == nullptr) {
-        SDL_Log("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
-        SDL_FreeSurface(textSurface); // Free the surface immediately after use
-        return;
-    }
-
-    // Get the texture width and height
-    int textureWidth, textureHeight;
-    SDL_QueryTexture(textTexture, NULL, NULL, &textureWidth, &textureHeight);
-
-    // Define the position and dimensions for the texture on the renderer
-    SDL_Rect renderQuad = {(width - textureWidth)/2, (height - textureHeight)/2, textureWidth, textureHeight}; // Assuming 640 as window width
-
-    // Render the texture to the renderer
-    SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
-
-    // Clean up
-    SDL_DestroyTexture(textTexture);
-    SDL_FreeSurface(textSurface);
-}
-
-void DisplayLose(SDL_Renderer* renderer, TTF_Font* font){
-    SDL_Color textColor = {227, 20, 20};
-    // Render the text to an SDL_Surface
-    SDL_Surface* textSurface = TTF_RenderText_Solid(font, "YOU ARE DEAD", textColor);
+    SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, textColor);
     if (textSurface == nullptr) {
         SDL_Log("Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError());
         return;
