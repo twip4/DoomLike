@@ -5,6 +5,7 @@
 #include "../include/Player.h"
 
 void DisplayMap(SDL_Renderer* renderer);
+
 Player::Player(int x, int y,std::vector<Monster*>* listMonster) : posX(x), posY(y), listMonster(listMonster){}
 
 void Player::view(SDL_Renderer* renderer) const {
@@ -91,8 +92,6 @@ void DisplayMap(SDL_Renderer* renderer){
     }
 }
 
-
-// Fonction pour calculer le produit vectoriel entre deux vecteurs
 double crossProduct(const Point& A, const Point& B) {
     return A.x * B.y - A.y * B.x;
 }
@@ -118,13 +117,27 @@ bool isInsideTriangle(const Point& A, const Point& B, const Point& C, const Poin
            (crossABP < 0 && crossBCP < 0 && crossCAP < 0);
 }
 
-
 void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* renderer) const {
     Point pos = {(double) posX, (double) posY};
     Point zoneStart = {posX + cos(angleStart * M_PI / 180) * width, posY + sin(angleStart * M_PI / 180) * width};
     Point zoneStop = {posX + cos(angleStop * M_PI / 180) * width, posY + sin(angleStop * M_PI / 180) * width};
 
-    for (const auto &monster: *listMonster) {
+    std::vector<std::pair<Monster*, double>> listMonsterSort;
+
+    // Calculer les distances et remplir le vecteur temporaire
+    for (const auto& monster : *listMonster) {
+        double distance = sqrt(pow(monster->posX - posX, 2) + pow(monster->posY - posY, 2));
+        listMonsterSort.emplace_back(monster, distance);
+    }
+
+    // Trier les monstres par distance croissante
+    std::sort(listMonsterSort.begin(), listMonsterSort.end(), [](const std::pair<Monster*, double>& a, const std::pair<Monster*, double>& b) {
+        return a.second > b.second;
+    });
+
+
+    for (const auto& pair : listMonsterSort) {
+        Monster* monster = pair.first;
         Point posMonster = {(double) monster->posX, (double) monster->posY};
         int textureWidth, textureHeight;
         SDL_QueryTexture(monster->texture, NULL, NULL, &textureWidth, &textureHeight);
@@ -186,7 +199,6 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
         }
     }
 }
-
 
 void Player::shot() {
     Point pos = {(double) posX, (double) posY};
