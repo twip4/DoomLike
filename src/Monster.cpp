@@ -10,3 +10,11 @@ void Monster::move(int targetX, int targetY) {
         posX += targetX;
         posY += targetY;
 }
+
+Monster::~Monster() {
+    // Libérer les ressources allouées
+    if (texture) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
+    }
+}

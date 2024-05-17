@@ -21,4 +21,8 @@ add_executable(DoomLike main.cpp
         src/constante.cpp
         src/Textures.cpp
         include/Textures.h
+        src/Game.cpp
+        include/Game.h
+        src/Menu.cpp
+        include/Menu.h
 )

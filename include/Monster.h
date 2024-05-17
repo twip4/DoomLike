@@ -21,6 +21,7 @@ class Monster {
     int pv = 100;
     SDL_Texture* texture;
     Monster(int x, int y, SDL_Texture* texture);
+    ~Monster();
     void move(int targetX, int targetY);
 };
 
