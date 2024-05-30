@@ -6,7 +6,7 @@
 
 using json = nlohmann::json;
 
-void receive_messages(int sock, bool* running, std::vector<Monster*>* listMonster, Textures T) {
+void receive_messages(int sock, bool* running, std::vector<Monster*>* listMonster, Textures T, Player* player) {
     char buffer[1024];
     while (*running) {
         int valread = read(sock, buffer, 1024);
@@ -17,27 +17,70 @@ void receive_messages(int sock, bool* running, std::vector<Monster*>* listMonste
             std::string jsonStr(buffer, valread);
 
             try {
-                // Désérialiser la chaîne en objet JSON
+                // Deserialize the string into a JSON object
                 json receivedData = json::parse(jsonStr);
-                if (receivedData["data"] == "AddPlayer"){
-                    Monster* monster = new Monster{receivedData["position"]["x"], receivedData["position"]["Y"], T.monsterTexture}; // Allocation dynamique
-                    monster->id = receivedData["id"];
-                    listMonster->push_back(monster);
-                } else {
-                    std::cerr << "Received JSON addPlayer error"<< std::endl;
-                }
-                if (receivedData["data"] == "MovePlayer") {
-                    int id = receivedData["id"];
-                    for (auto &monster: *listMonster) {
-                        if (monster->id == id) {
-                            // Mise à jour de la position du monstre
-                            monster->posX = receivedData["position"]["x"];
-                            monster->posY = receivedData["position"]["y"];
-                            break;
+
+                if (receivedData.contains("data") && receivedData["data"].is_string()) {
+                    std::string dataType = receivedData["data"];
+
+                    if (dataType == "AddPlayer") {
+                        if (receivedData.contains("position") && receivedData["position"].contains("x") &&
+                            receivedData["position"]["x"].is_number() &&
+                            receivedData["position"].contains("y") && receivedData["position"]["y"].is_number() &&
+                            receivedData.contains("id") && receivedData["id"].is_number()) {
+
+                            Monster *monster = new Monster{receivedData["position"]["x"], receivedData["position"]["y"],
+                                                           T.monsterTexture}; // Dynamic allocation
+                            monster->id = receivedData["id"];
+                            listMonster->push_back(monster);
+                        } else {
+                            std::cerr << "Received 'AddPlayer' JSON does not contain valid 'position' or 'id' data"
+                                      << std::endl;
                         }
+                    } else if (dataType == "MovePlayer") {
+                        if (receivedData.contains("position") && receivedData["position"].contains("x") &&
+                            receivedData["position"]["x"].is_number() &&
+                            receivedData["position"].contains("y") && receivedData["position"]["y"].is_number() &&
+                            receivedData.contains("id") && receivedData["id"].is_number()) {
+
+                            int id = receivedData["id"];
+                            for (auto &monster: *listMonster) {
+                                if (monster->id == id) {
+                                    // Update the monster's position
+                                    monster->posX = receivedData["position"]["x"];
+                                    monster->posY = receivedData["position"]["y"];
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (dataType == "RemovePlayer") {
+                        if (receivedData.contains("id") && receivedData["id"].is_number()) {
+                            int id = receivedData["id"];
+                            auto it = std::remove_if(listMonster->begin(), listMonster->end(), [id](Monster *monster) {
+                                if (monster->id == id) {
+                                    delete monster;  // Free the allocated memory
+                                    return true;
+                                }
+                                return false;
+                            });
+                            if (it != listMonster->end()) {
+                                listMonster->erase(it, listMonster->end());
+                                std::cout << "Removed player with id " << id << std::endl;
+                            }
+                        }
+                    } else if (dataType == "ShotPlayer") {
+                        if (receivedData.contains("pv") && receivedData["pv"].is_number()) {
+                            player->pv = receivedData["pv"];
+
+                        }
+                    }else {
+                        std::cerr << "Received 'MovePlayer' JSON does not contain valid 'position' or 'id' data"
+                                  << std::endl;
                     }
                 }
-
+                else {
+                    std::cerr << "Received unknown data type in JSON" << std::endl;
+                }
             } catch (json::parse_error& e) {
                 std::cerr << "JSON parse error: " << e.what() << std::endl;
             }
@@ -83,13 +126,6 @@ int connexionServer() {
         std::cout << "Connection success" << std::endl;
     }
 
-    const char *message = "test";
-
-    if (send(sock, message, strlen(message), 0) < 0) {
-        perror("send");
-        return 1;
-    }
-
     return sock;
 }
 
@@ -105,12 +141,14 @@ int multi(SDL_Renderer* renderer, TTF_Font* font, Textures T) {
     bool threadRunning = true;
     std::vector<Monster*> listMonster;
 
-    std::thread receiver(receive_messages, sock, &threadRunning, &listMonster, T);
+
 
     SDL_ShowCursor(SDL_DISABLE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
     Player player{200, 150, &listMonster};
+
+    std::thread receiver(receive_messages, sock, &threadRunning, &listMonster, T, &player);
 
     player.initMulti(sock);
 
@@ -208,6 +246,9 @@ int multi(SDL_Renderer* renderer, TTF_Font* font, Textures T) {
         SDL_RenderPresent(renderer);
 
         if (player.pv <= 0) {
+            threadRunning = false;
+            close(sock);
+            receiver.join();
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
             DisplayText(renderer, font, "YOU ARE DEAD", {227, 20, 20});
@@ -217,8 +258,10 @@ int multi(SDL_Renderer* renderer, TTF_Font* font, Textures T) {
         }
     }
 
-    threadRunning = false;
-    close(sock);
-    receiver.join();
+    if(threadRunning){
+        threadRunning = false;
+        close(sock);
+        receiver.join();
+    }
     return 0;
 }
