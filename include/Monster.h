@@ -16,6 +16,7 @@
 
 class Monster {
     public:
+    int id;
     int posX;
     int posY;
     int pv = 100;

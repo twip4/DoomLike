@@ -25,4 +25,6 @@ add_executable(DoomLike main.cpp
         include/Game.h
         src/Menu.cpp
         include/Menu.h
+        src/MultiPlayer.cpp
+        include/MultiPlayer.h
 )

@@ -4,6 +4,7 @@
 #include "include/constante.h"
 #include "include/Textures.h"
 #include "include/Game.h"
+#include "include/MultiPlayer.h"
 #include "include/Menu.h"
 
 int main(int argc, char* args[]) {
@@ -29,15 +30,15 @@ int main(int argc, char* args[]) {
     SDL_DisplayMode dm;
     SDL_GetDesktopDisplayMode(0, &dm); // Obtenez le mode d'affichage du bureau (0 pour le premier écran)
 
-    width = dm.w; // Mettre à jour la valeur de width
-    height = dm.h; // Mettre à jour la valeur de height
+    ScreenWidth = dm.w; // Mettre à jour la valeur de width
+    ScreenWheight = dm.h; // Mettre à jour la valeur de height
 
     SDL_Window* window = SDL_CreateWindow(
             "DoomLike",                        // titre
             SDL_WINDOWPOS_UNDEFINED,           // position initiale x
             SDL_WINDOWPOS_UNDEFINED,           // position initiale y
-            width,                             // largeur, utilisez la largeur de l'écran
-            height,                             // hauteur, utilisez la hauteur de l'écran
+            ScreenWidth,                             // largeur, utilisez la largeur de l'écran
+            ScreenWheight,                             // hauteur, utilisez la hauteur de l'écran
             SDL_WINDOW_FULLSCREEN_DESKTOP      // flags
     );
 
@@ -62,7 +63,15 @@ int main(int argc, char* args[]) {
 
     while(run){
         run = Accueil(renderer, font);
-        run = ModeSolo(renderer,font,T);
+        if (!run){
+            break;
+        }
+        if(run == 1){
+            run = ModeSolo(renderer,font,T);
+        }
+        if(run == 2){
+            run = multi(renderer,font,T);
+        }
     }
 
     // Nettoyage

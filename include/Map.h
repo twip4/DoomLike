@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <vector>
+#include <array>
 #include "constante.h"
 
 std::array<int, nb_case_w*nb_case_h> const map{

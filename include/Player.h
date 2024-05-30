@@ -11,6 +11,8 @@
 #include "constante.h"
 #include "Monster.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
+#include <nlohmann/json.hpp>
+
 struct Point {
     double x, y;
 };
@@ -29,6 +31,9 @@ public:
     void view(SDL_Renderer* renderer) const;
     void lineCenter(SDL_Renderer* renderer);
     void shot();
+    void shotMulti(int socket);
+    void move(int socket);
+    void initMulti(int socket);
 };
 
 #endif //DOOMLIKE_PLAYER_H

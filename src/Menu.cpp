@@ -9,6 +9,10 @@ void displayRectangle(SDL_Renderer* renderer, int x, int y, int rWidth, int rHei
 bool isInsideRectangle(int x, int y, int rectX, int rectY, int rectW, int rectH);
 
 int Accueil(SDL_Renderer* renderer, TTF_Font* font) {
+    SDL_ShowCursor(SDL_ENABLE);
+
+    SDL_SetRelativeMouseMode(SDL_FALSE);
+
     SDL_Event event;
     bool running = true;
     while (running) {
@@ -20,29 +24,33 @@ int Accueil(SDL_Renderer* renderer, TTF_Font* font) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                         case SDLK_ESCAPE:
-                            running = false;
+                            return 0;
                     }
                 case SDL_MOUSEBUTTONDOWN:
                     int mouseX, mouseY;
                     SDL_GetMouseState(&mouseX, &mouseY);
 
-                    if (isInsideRectangle(mouseX, mouseY, width/2 - (width/2)/2, height/6 * 2, width/2, height/12)) {
+                    if (isInsideRectangle(mouseX, mouseY, ScreenWidth/2 - (ScreenWidth/2)/2, ScreenWheight/6 * 2, ScreenWidth/2, ScreenWheight/12)) {
                         return 1;
+                    }
+
+                    if (isInsideRectangle(mouseX, mouseY, ScreenWidth/2 - (ScreenWidth/2)/2, ScreenWheight/6 * 3, ScreenWidth/2, ScreenWheight/12)) {
+                        return 2;
                     }
             }
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
             SDL_RenderClear(renderer);
 
-            displayText(renderer,font,width/2,height/5,"Menu principal",{255,255,255});
+            displayText(renderer,font,ScreenWidth/2,ScreenWheight/5,"Menu principal",{255,255,255});
 
-            displayRectangle(renderer,width/2 - (width/2)/2,height/6 * 2,width/2,height/12,{255,255,255});
+            displayRectangle(renderer,ScreenWidth/2 - (ScreenWidth/2)/2,ScreenWheight/6 * 2,ScreenWidth/2,ScreenWheight/12,{255,255,255});
 
-            displayText(renderer,font,width/2,(height/6 * 2) + height/12/2 ,"Mode Solo",{0,0,0});
+            displayText(renderer,font,ScreenWidth/2,(ScreenWheight/6 * 2) + ScreenWheight/12/2 ,"Mode Solo",{0,0,0});
 
-            displayRectangle(renderer,width/2 - (width/2)/2,height/6 * 3,width/2,height/12,{255,255,255});
+            displayRectangle(renderer,ScreenWidth/2 - (ScreenWidth/2)/2,ScreenWheight/6 * 3,ScreenWidth/2,ScreenWheight/12,{255,255,255});
 
-            displayText(renderer,font,width/2,(height/6 * 3) + height/12/2,"Mode Multi",{0,0,0});
+            displayText(renderer,font,ScreenWidth/2,(ScreenWheight/6 * 3) + ScreenWheight/12/2,"Mode Multi",{0,0,0});
 
             SDL_RenderPresent(renderer);
 

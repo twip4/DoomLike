@@ -14,9 +14,9 @@ void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD);
 int getRandomNumber(int min, int max);
 void DisplayScore(SDL_Renderer* renderer, TTF_Font* font);
 void DisplayText(SDL_Renderer* renderer, TTF_Font* font, const char *text, SDL_Color textColor);
-void updateMonsters(Monster* monster,Player* player);
 void AnnimShot(SDL_Renderer* renderer, Textures T, auto now, bool* annimationBoucle) ;
 void DisplayPv(SDL_Renderer* renderer, TTF_Font* font, Player player);
+void updateMonsters(Monster* monster, Player* player);
 
 int ModeSolo(SDL_Renderer* renderer, TTF_Font* font, Textures T){
 
@@ -58,7 +58,7 @@ int ModeSolo(SDL_Renderer* renderer, TTF_Font* font, Textures T){
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                         case SDLK_ESCAPE:
-                            running = false;
+                            return 0;
                         case SDLK_q:
                         case SDLK_LEFT:
                             if (!isCollision(player.posX + sin(player.angle * M_PI / 180) * vitesse,
@@ -161,7 +161,7 @@ int ModeSolo(SDL_Renderer* renderer, TTF_Font* font, Textures T){
                 SDL_RenderClear(renderer);
                 DisplayText(renderer,font,"YOU WIN !!!", {255, 215, 0});
                 SDL_RenderPresent(renderer);
-                SDL_Delay(5000);
+                SDL_Delay(1000);
                 break;
             }
         }
@@ -171,12 +171,12 @@ int ModeSolo(SDL_Renderer* renderer, TTF_Font* font, Textures T){
             SDL_RenderClear(renderer);
             DisplayText(renderer,font,"YOU ARE DEAD", {227, 20, 20});
             SDL_RenderPresent(renderer);
-            SDL_Delay(5000);
+            SDL_Delay(1000);
             break;
         }
     }
 
-    return 0;
+    return 1;
 }
 
 void AnnimShot(SDL_Renderer* renderer, Textures T, auto now, bool* annimationBoucle) {
@@ -198,8 +198,8 @@ void AnnimShot(SDL_Renderer* renderer, Textures T, auto now, bool* annimationBou
 
 void DisplayPerso(Player &player, SDL_Renderer* renderer){
     SDL_Rect rect;
-    rect.x = player.posX/MiniMap;
-    rect.y = player.posY/MiniMap;
+    rect.x = (((float)player.posX/width)*ScreenWidth)/MiniMap;
+    rect.y = (((float)player.posY/height)*ScreenWheight)/MiniMap;
     rect.w = width/size_map/rapportPlayerMaps;
     rect.h = height/size_map/rapportPlayerMaps;
 
@@ -210,10 +210,10 @@ void DisplayPerso(Player &player, SDL_Renderer* renderer){
 void DisplayMonster(const std::vector<Monster*>& listMonster, SDL_Renderer* renderer){
     for (const auto &monster: listMonster) {
         SDL_Rect rect;
-        rect.x = monster->posX/MiniMap;
-        rect.y = monster->posY/MiniMap;
-        rect.w = width/size_map/rapportPlayerMaps;
-        rect.h = height/size_map/rapportPlayerMaps;
+        rect.x = (((float)monster->posX/width)*ScreenWidth)/MiniMap;
+        rect.y = (((float)monster->posY/height)*ScreenWheight)/MiniMap;
+        rect.w = ScreenWidth/size_map/rapportPlayerMaps;
+        rect.h = ScreenWheight/size_map/rapportPlayerMaps;
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillRect(renderer, &rect);
@@ -250,16 +250,16 @@ void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, int angl
     SDL_Rect destRect1 = {
             0,
             0,
-            (effectiveWidth * width) / 960,  // Ajuster proportionnellement à la largeur de l'écran
-            height / 2
+            (effectiveWidth * ScreenWidth) / 960,  // Ajuster proportionnellement à la largeur de l'écran
+            ScreenWheight / 2
     };
 
     // Rectangle destination pour srcRect2
     SDL_Rect destRect2 = {
             destRect1.w,  // À la fin de destRect1
             0,
-            width - destRect1.w,  // Reste de la largeur de l'écran
-            height / 2
+            ScreenWidth - destRect1.w,  // Reste de la largeur de l'écran
+            ScreenWheight / 2
     };
 
     // Afficher la texture principale
@@ -274,7 +274,7 @@ void DisplayBackground(SDL_Renderer* renderer, SDL_Texture* skyTexture, int angl
 
     SDL_SetRenderDrawColor(renderer, 55, 55, 55, 255);
 
-    SDL_Rect fillRect = {0, height/2, width, height/2};
+    SDL_Rect fillRect = {0, ScreenWheight/2, ScreenWidth, ScreenWheight/2};
     SDL_RenderFillRect(renderer, &fillRect);
 }
 
@@ -283,7 +283,7 @@ bool isCollision(int x, int y) {
             (x+playerWidth)/(width/nb_case_w) + (y+playerHeight)/(height/nb_case_h)*nb_case_w,
             x/(width/nb_case_w) + y /(height/nb_case_h)*nb_case_w,
             (x+playerWidth)/(width/nb_case_w) + y /(height/nb_case_h)*nb_case_w,
-            x/(width/nb_case_w) + (y+playerHeight)/(height/nb_case_h)*nb_case_w
+            x/(width/nb_case_w) + (y+height)/(height/nb_case_h)*nb_case_w
     };
 
     if( map[list_indice[0]]==1 || map[list_indice[1]]==1||  map[list_indice[2]]==1||  map[list_indice[3]]==1  ){
@@ -294,8 +294,8 @@ bool isCollision(int x, int y) {
 
 void cursor(SDL_Renderer* renderer){
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    SDL_RenderDrawLine(renderer, width/2 - sizeCursor, height / 2, width / 2 + sizeCursor, height / 2);
-    SDL_RenderDrawLine(renderer, width/2, height/2 - sizeCursor, width / 2, height / 2 + sizeCursor);
+    SDL_RenderDrawLine(renderer, ScreenWidth/2 - sizeCursor, ScreenWheight / 2, ScreenWidth / 2 + sizeCursor, ScreenWheight / 2);
+    SDL_RenderDrawLine(renderer, ScreenWidth/2, ScreenWheight/2 - sizeCursor, ScreenWidth / 2, ScreenWheight / 2 + sizeCursor);
 }
 
 void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD){
@@ -310,9 +310,9 @@ void displayHUD(SDL_Renderer* renderer, SDL_Texture* HUD){
     };
 
     SDL_Rect destRect = {
-            width/2 ,
-            height - HUDTextureHeight,
-            width/2,
+            ScreenWidth/2 ,
+            ScreenWheight - HUDTextureHeight,
+            ScreenWidth/2,
             HUDTextureHeight
     };
 
@@ -353,7 +353,7 @@ void DisplayScore(SDL_Renderer* renderer, TTF_Font* font) {
     SDL_QueryTexture(textTexture, NULL, NULL, &textureWidth, &textureHeight);
 
     // Define the position and dimensions for the texture on the renderer
-    SDL_Rect renderQuad = {width - textureWidth, 0, textureWidth, textureHeight}; // Assuming 640 as window width
+    SDL_Rect renderQuad = {ScreenWidth - textureWidth, 0, textureWidth, textureHeight}; // Assuming 640 as window width
 
     // Render the texture to the renderer
     SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
@@ -389,7 +389,7 @@ void DisplayPv(SDL_Renderer* renderer, TTF_Font* font, Player player) {
     SDL_QueryTexture(textTexture, NULL, NULL, &textureWidth, &textureHeight);
 
     // Define the position and dimensions for the texture on the renderer
-    SDL_Rect renderQuad = {width - textureWidth - 200, 0, textureWidth, textureHeight}; // Assuming 640 as window width
+    SDL_Rect renderQuad = {ScreenWidth - textureWidth - 200, 0, textureWidth, textureHeight}; // Assuming 640 as window width
 
     // Render the texture to the renderer
     SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
@@ -420,7 +420,7 @@ void DisplayText(SDL_Renderer* renderer, TTF_Font* font, const char *text, SDL_C
     SDL_QueryTexture(textTexture, NULL, NULL, &textureWidth, &textureHeight);
 
     // Define the position and dimensions for the texture on the renderer
-    SDL_Rect renderQuad = {(width - textureWidth)/2, (height - textureHeight)/2, textureWidth, textureHeight}; // Assuming 640 as window width
+    SDL_Rect renderQuad = {(ScreenWidth - textureWidth)/2, (ScreenWheight - textureHeight)/2, textureWidth, textureHeight}; // Assuming 640 as window width
 
     // Render the texture to the renderer
     SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
@@ -438,7 +438,7 @@ void updateMonsters(Monster* monster, Player* player) {
             break;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         int stepX;
         int stepY;

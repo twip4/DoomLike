@@ -5,7 +5,10 @@
 #include "../include/constante.h"
 
 // Définition des variables
-int width = 0;
-int height = 0;
+int ScreenWidth = 0;
+int ScreenWheight = 0;
+
+int width = 1000;
+int height = 1000;
 
 int score = 0;

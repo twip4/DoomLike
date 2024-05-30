@@ -6,6 +6,9 @@
 #define PI 3.14159265358979323846
 #include <SDL2/SDL.h>
 
+extern int ScreenWidth;
+extern int ScreenWheight;
+
 extern int width;
 extern int height;
 

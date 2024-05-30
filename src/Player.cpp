@@ -2,7 +2,10 @@
 // Created by Paul Baudinot on 14/04/2024.
 //
 
+#include <sys/socket.h>
 #include "../include/Player.h"
+
+using json = nlohmann::json;
 
 void DisplayMap(SDL_Renderer* renderer);
 
@@ -34,7 +37,7 @@ void Player::view(SDL_Renderer* renderer) const {
                 // SDL_RenderDrawLine(renderer, (posX+ playerWidth / 2 )/ MiniMap,  (posY+ playerWidth / 2 ) / MiniMap, x_detect / MiniMap, y_detect / MiniMap);
                 int wide = 1;
                 double rectHeight = 50000 / (cos((angleLine - angle) * M_PI / 180) * distance);
-                if (rectHeight > height) rectHeight = height;
+                if (rectHeight > ScreenWheight) rectHeight = ScreenWheight;
 
                 SDL_Rect srcRect;
                 SDL_Rect destRect;
@@ -48,12 +51,12 @@ void Player::view(SDL_Renderer* renderer) const {
                     SDL_SetTextureColorMod(wallTexture, 255, 255, 255);
                     int textureOffset = y_detect % textureWidth;
                     srcRect = {textureOffset, 0, wide, textureHeight};  // Taking a 1-pixel wide slice
-                    destRect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
+                    destRect = {stepVue * wide, static_cast<int>((ScreenWheight - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
                 } else {
                     SDL_SetTextureColorMod(wallTexture, 200, 200, 200);
                     int textureOffset = x_detect % textureWidth;
                     srcRect = {textureOffset, 0, wide, textureHeight};  // Taking a 1-pixel wide slice
-                    destRect = {stepVue * wide, static_cast<int>((height - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
+                    destRect = {stepVue * wide, static_cast<int>((ScreenWheight - rectHeight) / 2), wide, static_cast<int>(rectHeight)};
                 }
 
                 SDL_RenderFillRect(renderer, &destRect); // Fill the rectangle first to provide a background color
@@ -68,19 +71,19 @@ void Player::view(SDL_Renderer* renderer) const {
 }
 
 void Player::lineCenter(SDL_Renderer* renderer){
-    int x_detect = posX + playerWidth/2 +cos(angle*PI/180)*100;
-    int y_detect = posY + playerHeight/2 +sin(angle*PI/180)*100;
+    int x_detect = posX + playerWidth/2 +cos(angle*PI/180)*width/15;
+    int y_detect = posY + playerHeight/2 +sin(angle*PI/180)*width/15;
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // Set the color to red for the ray
-    SDL_RenderDrawLine(renderer, posX / MiniMap  , posY /MiniMap , x_detect / MiniMap, y_detect / MiniMap);
+    SDL_RenderDrawLine(renderer, (((float)posX/width)*ScreenWidth)/MiniMap  , (((float)posY/height)*ScreenWheight)/MiniMap , (((float)x_detect/width)*ScreenWidth)/MiniMap, (((float)y_detect/height)*ScreenWheight)/MiniMap);
 }
 
 void DisplayMap(SDL_Renderer* renderer){
     for(int i=0;i<nb_case_w*nb_case_h;i++){
         SDL_Rect rect;
-        rect.x = i%nb_case_w*width/nb_case_w/MiniMap;
-        rect.y = floor(i/nb_case_h)*height/nb_case_h/MiniMap;
-        rect.w = width/size_map/MiniMap+1;
-        rect.h = height/size_map/MiniMap+1;
+        rect.x = i%nb_case_w*ScreenWidth/nb_case_w/MiniMap;
+        rect.y = floor(i/nb_case_h)*ScreenWheight/nb_case_h/MiniMap;
+        rect.w = ScreenWidth/size_map/MiniMap+1;
+        rect.h = ScreenWheight/size_map/MiniMap+1;
         if(map[i]==1){
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderFillRect(renderer, &rect);
@@ -176,7 +179,7 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
             if (distancePoint >= distanceMonster){
                 float distance = sqrt(pow(monster->posX - posX, 2) + pow(monster->posY - posY, 2));
                 double rectHeight = 50000 / distance;
-                rectHeight = std::min(rectHeight, static_cast<double>(height));
+                rectHeight = std::min(rectHeight, static_cast<double>(ScreenWheight));
                 int rectWidth = static_cast<int>(textureWidth / (textureHeight / rectHeight));
                 float rationX =  (float)((angleMonstre*180 / M_PI)-angleStart)/(float)(fov) ;
 
@@ -185,8 +188,8 @@ void Player::DisplayMonster(float angleStart, float angleStop, SDL_Renderer* ren
                 }
 
                 SDL_Rect srcRect = {0, 0, textureWidth, textureHeight};
-                SDL_Rect destRect = {static_cast<int>(width*rationX - (rectWidth/2)),
-                                     static_cast<int>((height / 2) - (rectHeight / 2)),
+                SDL_Rect destRect = {static_cast<int>(ScreenWidth*rationX - (rectWidth/2)),
+                                     static_cast<int>((ScreenWheight / 2) - (rectHeight / 2)),
                                      rectWidth,
                                      static_cast<int>(rectHeight)};
 
@@ -245,5 +248,46 @@ void Player::shot() {
             }
         }
         ++it;  // Move to the next element if not erased
+    }
+}
+
+void Player::shotMulti(int socket) {
+    json shotData;
+    shotData["data"] = "shot";
+    shotData["position"]["x"] = posX;
+    shotData["position"]["y"] = posY;
+    shotData["angle"] = angle;
+
+    std::string shotStr = shotData.dump();
+
+    if (send(socket, shotStr.c_str(), shotStr.length(), 0) < 0) {
+        perror("send");
+    }
+};
+
+void Player::move(int socket) {
+    json shotData;
+    shotData["data"] = "move";
+    shotData["position"]["x"] = posX;
+    shotData["position"]["y"] = posY;
+
+    std::string shotStr = shotData.dump();
+
+    if (send(socket, shotStr.c_str(), shotStr.length(), 0) < 0) {
+        perror("send");
+    }
+};
+
+void Player::initMulti(int socket){
+    json shotData;
+    shotData["data"] = "init";
+    shotData["position"]["x"] = posX;
+    shotData["position"]["y"] = posY;
+    shotData["pv"] = pv;
+
+    std::string shotStr = shotData.dump();
+
+    if (send(socket, shotStr.c_str(), shotStr.length(), 0) < 0) {
+        perror("send");
     }
 }
